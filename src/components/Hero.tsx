@@ -11,7 +11,7 @@ export default function Hero() {
 
       {/* Capa 2: Desktop - Imagen principal */}
       <img
-        src="/hero-desktop.jpg"
+        src="/hero-desktop.webp"
         alt="JUVECONF Desktop"
         className="hidden lg:block absolute inset-0 w-full h-full object-cover"
         style={{ zIndex: 1 }}
@@ -19,7 +19,7 @@ export default function Hero() {
 
       {/* Capa 2: Mobile/Tablet - Imagen principal */}
       <img
-        src="/hero-mobile.png"
+        src="/hero-mobile.webp"
         alt="JUVECONF Mobile"
         className="lg:hidden absolute inset-0 w-full h-full object-contain"
         style={{

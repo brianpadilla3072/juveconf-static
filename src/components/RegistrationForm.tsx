@@ -26,8 +26,9 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
     email: string;
     city: string;
     church: string;
+    merchandiseSizes?: Record<string, string>;
   }>>([
-    { name: '', dni: '', birthdate: '', phone: '', email: '', city: '', church: '' }
+    { name: '', dni: '', birthdate: '', phone: '', email: '', city: '', church: '', merchandiseSizes: {} }
   ]);
 
   // Cálculos de precio dinámicos
@@ -51,7 +52,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
     if (newNum > guestData.length) {
       // Agregar invitados vacíos
       for (let i = guestData.length; i < newNum; i++) {
-        newGuestData.push({ name: '', dni: '', birthdate: '', phone: '', email: '', city: '', church: '' });
+        newGuestData.push({ name: '', dni: '', birthdate: '', phone: '', email: '', city: '', church: '', merchandiseSizes: {} });
       }
     } else {
       // Reducir invitados
@@ -63,6 +64,15 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
   const handleGuestChange = (index: number, field: 'name' | 'dni' | 'birthdate' | 'phone' | 'email' | 'city' | 'church', value: string) => {
     const newGuestData = [...guestData];
     newGuestData[index][field] = value;
+    setGuestData(newGuestData);
+  };
+
+  const handleMerchandiseSizeChange = (guestIndex: number, merchType: string, size: string) => {
+    const newGuestData = [...guestData];
+    if (!newGuestData[guestIndex].merchandiseSizes) {
+      newGuestData[guestIndex].merchandiseSizes = {};
+    }
+    newGuestData[guestIndex].merchandiseSizes![merchType] = size;
     setGuestData(newGuestData);
   };
 
@@ -448,6 +458,30 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                               required
                             />
                           </div>
+
+                          {/* Selectores de talla de merch */}
+                          {selectedPackage.metadata?.merchandise?.enabled &&
+                           selectedPackage.metadata.merchandise.allMerchandise?.map((merch) => (
+                            <div key={merch.type} className="grid gap-2">
+                              <label className="text-sm font-medium text-white/80" htmlFor={`guest-merch-${merch.type}-${index}`}>
+                                {merch.label}
+                              </label>
+                              <select
+                                id={`guest-merch-${merch.type}-${index}`}
+                                value={guest.merchandiseSizes?.[merch.type] || ''}
+                                onChange={(e) => handleMerchandiseSizeChange(index, merch.type, e.target.value)}
+                                className="bg-black/20 text-white/80 backdrop-blur-sm p-4 rounded-lg border border-white/10 hover:border-white/20 focus:border-[#8B3FFF]/50 focus:ring-1 focus:ring-[#8B3FFF]/30 transition-colors [&>option]:bg-stone-900/95 [&>option]:text-white"
+                                required
+                              >
+                                <option value="" className="bg-stone-900/95 text-white/70">Selecciona una talla</option>
+                                {merch.sizes.map((size) => (
+                                  <option key={size} value={size} className="bg-stone-900/95 text-white">
+                                    {size}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
