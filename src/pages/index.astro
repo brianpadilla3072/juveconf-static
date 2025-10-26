@@ -2,6 +2,7 @@
 import Hero from '../components/Hero';
 import CombosGrid from '../components/CombosGrid';
 import Church from '../components/Church';
+import Footer from '../components/Footer';
 import '../styles/global.css';
 ---
 
@@ -12,11 +13,12 @@ import '../styles/global.css';
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>JUVECONF</title>
-		<meta name="description" content="Conferencia Juvenil JUVECONF - A la medida de la estatura de la plenitud de Cristo. 21-22-23 NOV, Bahía Blanca" />
+		<meta name="description" content="Conferencia Juvenil JUVECONF - A la medida de la estatura de la plenitud de Cristo, Bahía Blanca" />
 	</head>
 	<body class="min-h-screen bg-white">
 		<Hero client:load />
 		<CombosGrid client:load />
 		<Church client:load />
+		<!-- <Footer client:load /> -->
 	</body> 
 </html>

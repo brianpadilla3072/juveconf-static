@@ -39,10 +39,10 @@ export default function UserForm({ selectedCombo, onBack }: UserFormProps) {
             <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 break-words">
               ¡Solicitud Enviada!
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-6 break-words">
               Hemos recibido tu solicitud para el {selectedCombo.title}. Te contactaremos pronto.
             </p>
             <button
@@ -75,15 +75,16 @@ export default function UserForm({ selectedCombo, onBack }: UserFormProps) {
         </button>
 
         <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 mb-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 break-words">
             Combo seleccionado: {selectedCombo.title}
           </h3>
-          <p className="text-3xl font-bold text-purple-600">
-            ${selectedCombo.price} USD
-          </p>
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="text-2xl sm:text-3xl font-bold text-purple-600 break-words">${selectedCombo.price}</span>
+            <span className="text-purple-600 font-semibold">USD</span>
+          </div>
         </div>
 
-        <h2 className="text-3xl font-bold mb-6 text-gray-900">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900 break-words">
           Completa tus datos
         </h2>
 

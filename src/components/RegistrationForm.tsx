@@ -149,7 +149,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                 <span className="text-sm font-medium">Cambiar plan</span>
               </button>
 
-              <div className="text-2xl md:text-3xl font-bold text-center text-white">
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-center text-white break-words">
                 Registro de Entrada
               </div>
 
@@ -178,18 +178,23 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                   </div>
 
                   <div className="bg-gradient-to-r from-purple-500/20 to-purple-600/20 border border-purple-400/30 rounded-lg p-4">
-                    <h3 className="text-xl font-black text-white mb-2">
+                    <h3 className="text-lg sm:text-xl font-black text-white mb-2 break-words">
                       {selectedPackage.titulo}
                     </h3>
-                    <p className="text-white/70 text-sm mb-3">
+                    <p className="text-white/70 text-sm mb-3 break-words hyphens-auto">
                       {selectedPackage.descripcion}
                     </p>
-                    <div className="text-3xl font-black text-white mb-3">
-                      ${selectedPackage.precio.toLocaleString('es-AR')} <span className="text-sm text-white/60 font-normal">por persona</span>
+                    <div className="mb-3">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <span className="text-2xl sm:text-3xl font-black text-white break-words">
+                          ${selectedPackage.precio.toLocaleString('es-AR')}
+                        </span>
+                        <span className="text-sm text-white/60 font-normal">por persona</span>
+                      </div>
                     </div>
 
                     {/* Selector de cantidad */}
-                    <div className="flex items-center gap-3 mt-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-4">
                       <span className="text-white/80 text-sm font-medium">Cantidad de personas:</span>
                       <div className="flex items-center gap-2">
                         <button
@@ -218,9 +223,9 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
 
                     {/* Total */}
                     <div className="mt-4 pt-4 border-t border-white/20">
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-wrap justify-between items-center gap-2">
                         <span className="text-white/80 text-sm">Total:</span>
-                        <span className="text-2xl font-black text-white">
+                        <span className="text-xl sm:text-2xl font-black text-white break-words">
                           ${totalPrice.toLocaleString('es-AR')}
                         </span>
                       </div>
@@ -504,14 +509,19 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                       </div>
 
                       <div className="bg-gradient-to-r from-purple-500/20 to-purple-600/20 border border-purple-400/30 rounded-lg p-4">
-                        <h3 className="text-xl font-black text-white mb-2">
+                        <h3 className="text-xl font-black text-white mb-2 break-words">
                           {selectedPackage.titulo}
                         </h3>
-                        <p className="text-white/70 text-sm mb-3">
+                        <p className="text-white/70 text-sm mb-3 break-words hyphens-auto">
                           {selectedPackage.descripcion}
                         </p>
-                        <div className="text-3xl font-black text-white mb-3">
-                          ${selectedPackage.precio.toLocaleString('es-AR')} <span className="text-sm text-white/60 font-normal">por persona</span>
+                        <div className="mb-3">
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <span className="text-3xl font-black text-white break-words">
+                              ${selectedPackage.precio.toLocaleString('es-AR')}
+                            </span>
+                            <span className="text-sm text-white/60 font-normal">por persona</span>
+                          </div>
                         </div>
 
                         {/* Selector de cantidad */}
@@ -544,9 +554,9 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
 
                         {/* Total */}
                         <div className="mt-4 pt-4 border-t border-white/20">
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-wrap justify-between items-center gap-2">
                             <span className="text-white/80 text-sm">Total:</span>
-                            <span className="text-2xl font-black text-white">
+                            <span className="text-2xl font-black text-white break-words">
                               ${totalPrice.toLocaleString('es-AR')}
                             </span>
                           </div>
@@ -656,18 +666,20 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
             </div>
           </div>
 
-          {/* Footer - Logo JUVECONFE (Desktop only) */}
-          <div className="hidden lg:flex justify-end items-center gap-4 mt-8 px-6">
+          {/* Footer - Logo JUVECONFE */}
+          <div className="flex justify-end items-center gap-4 mt-8 px-6">
             <div className="text-right">
               <p className="text-[#CCFF00] text-base lg:text-lg font-normal leading-tight">
                 CONFERENCIA JUVENIL<br/>
                 BAHIA BLANCA
               </p>
             </div>
-            <div className="bg-[#CCFF00] px-6 py-2 rounded">
-              <span className="text-[#8B3FFF] font-black text-2xl lg:text-3xl">
-                JUVECONFE
-              </span>
+            <div className="bg-[#CCFF00] px-4 py-2 rounded">
+              <img
+                src="/icons/juveconfe.svg"
+                alt="JUVECONFE"
+                className="h-8 lg:h-10 w-auto"
+              />
             </div>
           </div>
 

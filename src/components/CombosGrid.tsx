@@ -199,7 +199,7 @@ export default function CombosGrid() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-start gap-6 mb-8 lg:mb-12">
           {/* Título INSCRIPCIÓN */}
           <h1
-            className="text-[#CCFF00] font-black text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none"
+            className="text-[#CCFF00] font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none break-words"
             style={{
               animation: 'fadeInUp 0.8s ease-out'
             }}
@@ -230,7 +230,7 @@ export default function CombosGrid() {
                 <div
                   key={paquete.id}
                   onClick={() => handleSelectPackage(paquete.id)}
-                  className="relative bg-white rounded-3xl p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:scale-[1.08] hover:-rotate-1 transform active:scale-95 overflow-hidden group"
+                  className="relative bg-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:scale-[1.08] hover:-rotate-1 transform active:scale-95 overflow-hidden group"
                   style={{
                     animation: `fadeInUp 0.6s ease-out ${0.4 + index * 0.15}s both`,
                     transformStyle: 'preserve-3d',
@@ -248,29 +248,31 @@ export default function CombosGrid() {
                   />
 
                   {/* Título */}
-                  <h2 className="text-[#8B3FFF] font-black text-3xl lg:text-4xl mb-4 relative z-10">
+                  <h2 className="text-[#8B3FFF] font-black text-2xl sm:text-3xl lg:text-4xl mb-4 relative z-10 break-words overflow-wrap-anywhere">
                     {paquete.titulo}
                   </h2>
 
                   {/* Descripción */}
-                  <p className="text-black text-sm lg:text-base leading-relaxed mb-6">
+                  <p className="text-black text-sm lg:text-base leading-relaxed mb-6 break-words hyphens-auto">
                     {paquete.descripcion}
                   </p>
 
                   {/* Precio */}
                   <div className="mb-6 pb-6 border-b-2 border-gray-200">
-                    <span className="text-black font-black text-5xl lg:text-6xl">
-                      ${paquete.precio.toLocaleString('es-AR')}
-                    </span>
-                    {paquete.gratuito && (
-                      <span className="text-black font-bold text-base lg:text-lg align-super ml-2">
-                        /GRATUITO
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="text-black font-black text-4xl sm:text-5xl lg:text-6xl break-words">
+                        ${paquete.precio.toLocaleString('es-AR')}
                       </span>
-                    )}
+                      {paquete.gratuito && (
+                        <span className="text-black font-bold text-sm sm:text-base lg:text-lg">
+                          /GRATUITO
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Lista de características */}
-                  <ul className="space-y-3 mb-16">
+                  <ul className="space-y-3 mb-20">
                     {paquete.caracteristicas.map((caracteristica, index) => (
                       <li key={index} className="flex items-start gap-3">
                         {/* Checkmark púrpura */}
@@ -285,7 +287,7 @@ export default function CombosGrid() {
                             clipRule="evenodd"
                           />
                         </svg>
-                        <span className="text-black text-xs lg:text-sm leading-tight">
+                        <span className="text-black text-xs lg:text-sm leading-tight break-words hyphens-auto">
                           {caracteristica}
                         </span>
                       </li>
@@ -312,18 +314,20 @@ export default function CombosGrid() {
           </div>
         </div>
 
-        {/* Footer - Desktop only */}
-        <div className="hidden lg:flex justify-end items-center gap-4 mt-8">
+        {/* Footer */}
+        <div className="flex justify-end items-center gap-4 mt-8">
           <div className="text-right">
             <p className="text-[#CCFF00] text-base lg:text-lg font-normal leading-tight">
               CONFERENCIA JUVENIL<br/>
               BAHIA BLANCA
             </p>
           </div>
-          <div className="bg-[#CCFF00] px-6 py-2 rounded">
-            <span className="text-[#8B3FFF] font-black text-2xl lg:text-3xl">
-              JUVECONFE
-            </span>
+          <div className="bg-[#ADFF00] px-4 py-2 rounded">
+            <img
+              src="/icons/juveconfe.svg"
+              alt="JUVECONFE"
+              className="h-9 lg:h-10 w-auto"
+            />
           </div>
         </div>
 
