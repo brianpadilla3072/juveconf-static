@@ -6,6 +6,19 @@ interface RegistrationFormProps {
     titulo: string;
     descripcion: string;
     precio: number;
+    personsIncluded: number;
+    maxPersons?: number;
+    metadata?: {
+      benefits: string[];
+      merchandise?: {
+        enabled: boolean;
+        allMerchandise: Array<{
+          type: string;
+          label: string;
+          sizes: string[];
+        }>;
+      };
+    };
   };
   onBack: () => void;
 }
@@ -76,15 +89,120 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
     setGuestData(newGuestData);
   };
 
-  const handleSubmit = (paymentMethod: string) => {
-    console.log('Formulario enviado:', {
-      ...formData,
-      package: selectedPackage,
-      guests: guestData,
-      numGuests,
-      paymentMethod,
-      totalPrice: paymentMethod === 'credit' ? totalPriceWithSurcharge : totalPrice
-    });
+  const handleSubmit = async (paymentMethod: string) => {
+    // Validar formulario
+    if (!formData.email || !formData.phone || !formData.dni) {
+      alert('Por favor completa todos los campos del comprador');
+      return;
+    }
+
+    // Validar invitados
+    for (let i = 0; i < guestData.length; i++) {
+      const guest = guestData[i];
+      if (!guest.name || !guest.dni || !guest.birthdate || !guest.phone || !guest.email || !guest.city || !guest.church) {
+        alert(`Por favor completa todos los campos del invitado ${i + 1}`);
+        return;
+      }
+
+      // Validar talles de merchandising si el paquete lo requiere
+      if (selectedPackage.metadata?.merchandise?.enabled) {
+        const requiredMerch = selectedPackage.metadata.merchandise.allMerchandise || [];
+        for (const merch of requiredMerch) {
+          if (!guest.merchandiseSizes?.[merch.type]) {
+            alert(`Por favor selecciona la talla de ${merch.label} para el invitado ${i + 1}`);
+            return;
+          }
+        }
+      }
+    }
+
+    // Mostrar loading
+    const submitButton = document.activeElement as HTMLButtonElement;
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Procesando...';
+    }
+
+    try {
+      const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3072';
+      const eventId = import.meta.env.PUBLIC_EVENT_ID;
+
+      // Formatear attendees para el backend
+      const attendees = guestData.map(guest => ({
+        name: guest.name,
+        cuil: guest.dni,
+        metadata: JSON.stringify({
+          email: guest.email,
+          phone: guest.phone,
+          birthdate: guest.birthdate,
+          city: guest.city,
+          church: guest.church,
+          merchandiseSizes: guest.merchandiseSizes || {}
+        })
+      }));
+
+      // Determinar tipo de pago
+      const paymentType = paymentMethod === 'credit' ? 'MERCADOPAGO' : 'TRANSFER';
+      const finalTotal = paymentMethod === 'credit' ? totalPriceWithSurcharge : totalPrice;
+
+      // Crear payload según el formato esperado por el backend (CreatePreferenceDto)
+      const orderPayload = {
+        id: selectedPackage.id,                    // ID del combo
+        email: formData.email,
+        phone: formData.phone,
+        cuil: formData.dni,
+        title: selectedPackage.titulo,             // Título del combo
+        unit_price: pricePerPerson,                // Precio unitario
+        quantity: numGuests,                       // Cantidad de personas
+        minPersons: selectedPackage.personsIncluded || 1,
+        maxPersons: selectedPackage.maxPersons,
+        attendees: attendees,
+        eventId: eventId
+      };
+
+      // Determinar endpoint según método de pago
+      let endpoint = '';
+      if (paymentType === 'MERCADOPAGO') {
+        endpoint = `${apiUrl}/mercadopago/preference`;
+      } else {
+        endpoint = `${apiUrl}/transfers/create-transfer-order`;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear la orden');
+      }
+
+      const result = await response.json();
+
+      // Si es MercadoPago, redirigir al checkout
+      if (paymentType === 'MERCADOPAGO' && result.initPoint) {
+        window.location.href = result.initPoint;
+        return;
+      }
+
+      // Si es transferencia/efectivo, redirigir a página de confirmación
+      const orderId = result.orderID;
+      window.location.href = `/confirmacion?orderId=${orderId}`;
+
+    } catch (error: any) {
+      console.error('Error al crear orden:', error);
+      alert(`Error al procesar tu orden: ${error.message}. Por favor intenta nuevamente.`);
+
+      // Restaurar botón
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Efectivo y transferencia';
+      }
+    }
   };
 
   return (

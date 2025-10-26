@@ -1,0 +1,42 @@
+---
+import TicketDownload from '../components/TicketDownload';
+import '../styles/global.css';
+
+// Esta página maneja la descarga de entradas
+// URL: /descargar-entrada?paymentId=xxx
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png+xml" href="/icon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Descargar Entradas - JUVECONF</title>
+		<meta name="description" content="Descarga tus entradas para JUVECONF 2025" />
+		<meta name="robots" content="noindex, nofollow" />
+	</head>
+	<body class="min-h-screen bg-black">
+		<div id="ticket-download-root"></div>
+
+		<script>
+			import TicketDownload from '../components/TicketDownload';
+			import { createElement } from 'react';
+			import { createRoot } from 'react-dom/client';
+
+			// Obtener paymentId del query string
+			const params = new URLSearchParams(window.location.search);
+			const container = document.getElementById('ticket-download-root');
+			const paymentId = params.get('paymentId') || '';
+
+			// Renderizar componente React
+			if (container) {
+				const root = createRoot(container);
+				root.render(
+					createElement(TicketDownload, {
+						paymentId
+					})
+				);
+			}
+		</script>
+	</body>
+</html>

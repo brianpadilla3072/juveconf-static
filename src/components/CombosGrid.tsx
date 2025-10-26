@@ -5,6 +5,8 @@ interface Combo {
   id: string;
   name: string;
   price: number;
+  personsIncluded: number;
+  maxPersons?: number;
   description: string;
   isFree: boolean;
   metadata: {
@@ -26,6 +28,8 @@ interface Package {
   titulo: string;
   descripcion: string;
   precio: number;
+  personsIncluded: number;
+  maxPersons?: number;
   gratuito: boolean;
   caracteristicas: string[];
   icono: string;
@@ -72,6 +76,8 @@ export default function CombosGrid() {
           titulo: combo.name.toUpperCase(),
           descripcion: combo.description?.toUpperCase() || '',
           precio: combo.price,
+          personsIncluded: combo.personsIncluded,
+          maxPersons: combo.maxPersons,
           gratuito: combo.isFree,
           caracteristicas: combo.metadata?.benefits || [],
           icono: '→',

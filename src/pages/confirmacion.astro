@@ -1,0 +1,21 @@
+---
+import '../styles/global.css';
+import OrderSuccessWrapper from '../components/OrderSuccessWrapper.tsx';
+
+// Esta página maneja la confirmación de orden
+// URL: /confirmacion?orderId=xxx
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png+xml" href="/icon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Confirmación de Orden - JUVECONF</title>
+		<meta name="description" content="Tu orden ha sido registrada exitosamente" />
+		<meta name="robots" content="noindex, nofollow" />
+	</head>
+	<body class="min-h-screen bg-black">
+		<OrderSuccessWrapper client:only="react" />
+	</body>
+</html>
