@@ -1,0 +1,24 @@
+---
+// Deshabilitar pre-renderizado para habilitar SSR en esta ruta
+export const prerender = false;
+
+import TicketDownload from '../../components/TicketDownload';
+import '../../styles/global.css';
+
+// Obtener paymentId de la URL dinámica
+const { id } = Astro.params;
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png+xml" href="/icon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Descargar Entrada - JUVECONF</title>
+		<meta name="description" content="Descarga tu entrada para JUVECONF 2025" />
+		<meta name="robots" content="noindex, nofollow" />
+	</head>
+	<body class="min-h-screen bg-black">
+		<TicketDownload client:only="react" paymentId={id} />
+	</body>
+</html>
