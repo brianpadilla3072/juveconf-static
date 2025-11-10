@@ -13,7 +13,7 @@ interface Invitee {
   email?: string;
   phone?: string;
   paymentId: string;
-  order: {
+  Order: {
     eventId: string;
   } | null;
 }
@@ -49,7 +49,7 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
   };
 
   const generateTicketPDF = async (invitee: Invitee) => {
-    if (!invitee.order?.eventId) {
+    if (!invitee.Order?.eventId) {
       alert('No se pudo obtener el ID del evento');
       return;
     }
