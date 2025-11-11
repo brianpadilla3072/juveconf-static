@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(npm create:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(pm2 start:*)",
+      "Bash(pm2 save:*)",
+      "Bash(pm2 logs:*)",
+      "Bash(pm2 list:*)",
+      "Bash(pm2 describe:*)",
+      "Bash(pm2 info:*)",
+      "Bash(pm2 restart:*)"
     ],
     "deny": [],
     "ask": []
