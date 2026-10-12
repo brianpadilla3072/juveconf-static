@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import RegistrationForm from './RegistrationForm';
+import type { MealsConfig } from '../lib/meals';
 
 interface Combo {
   id: string;
@@ -9,6 +10,7 @@ interface Combo {
   maxPersons?: number;
   description: string;
   isFree: boolean;
+  mealsEnabled?: boolean;
   metadata: {
     benefits: string[];
     merchandise?: {
@@ -31,6 +33,7 @@ interface Package {
   personsIncluded: number;
   maxPersons?: number;
   gratuito: boolean;
+  mealsEnabled: boolean;
   caracteristicas: string[];
   icono: string;
   metadata?: {
@@ -46,9 +49,24 @@ interface Package {
   };
 }
 
+// Menús y descuentos de comidas del evento. Solo se usan en los combos con `mealsEnabled`. Si falla o no hay configuración => null (el sitio queda como siempre).
+async function fetchMealsConfig(apiUrl: string, eventId: string): Promise<MealsConfig | null> {
+  try {
+    const response = await fetch(`${apiUrl}/meals/public/${eventId}`, { signal: AbortSignal.timeout(4000) });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data?.enabled !== true) return null; // deshabilitado: no se descarga nada más
+    const { parseMealsConfig } = await import('../lib/meals');
+    return parseMealsConfig(data);
+  } catch {
+    return null;
+  }
+}
+
 export default function CombosGrid() {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [combos, setCombos] = useState<Package[]>([]);
+  const [meals, setMeals] = useState<MealsConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +80,12 @@ export default function CombosGrid() {
           throw new Error('Event ID no configurado');
         }
 
-        const response = await fetch(`${apiUrl}/combos/event/${eventId}/published`);
+        // La config de comidas se pide en paralelo y se espera junto con los combos
+        // para que el formulario no cambie de modo una vez abierto.
+        const [response, mealsConfig] = await Promise.all([
+          fetch(`${apiUrl}/combos/event/${eventId}/published`),
+          fetchMealsConfig(apiUrl, eventId),
+        ]);
 
         if (!response.ok) {
           throw new Error('Error al cargar los combos');
@@ -79,12 +102,14 @@ export default function CombosGrid() {
           personsIncluded: combo.personsIncluded,
           maxPersons: combo.maxPersons,
           gratuito: combo.isFree,
+          mealsEnabled: combo.mealsEnabled === true,
           caracteristicas: combo.metadata?.benefits || [],
           icono: '→',
           metadata: combo.metadata
         }));
 
         setCombos(mappedCombos);
+        setMeals(mealsConfig);
       } catch (err: any) {
         console.error('Error fetching combos:', err);
         setError(err.message || 'Error al cargar los combos');
@@ -121,6 +146,7 @@ export default function CombosGrid() {
       return (
         <RegistrationForm
           selectedPackage={paquete}
+          meals={paquete.mealsEnabled ? meals : null}
           onBack={() => setSelectedPackage(null)}
         />
       );

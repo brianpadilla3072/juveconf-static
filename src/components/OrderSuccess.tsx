@@ -4,13 +4,51 @@ interface OrderSuccessProps {
   orderId: string;
 }
 
+const CVU = '0000003100030634838698';
+const ALIAS = 'Juveconfe25';
+
+type ProofState = 'idle' | 'sending' | 'sent' | 'error';
+
 export default function OrderSuccess({ orderId }: OrderSuccessProps) {
-  const [copied, setCopied] = useState(false);
+  // Texto copiado más recientemente (para mostrar el ✓ solo en el botón que corresponde)
+  const [copied, setCopied] = useState<string | null>(null);
+
+  // Órdenes con comidas: la redirección agrega ?meals=1
+  const [hasMeals] = useState(
+    () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('meals') === '1'
+  );
+  const [proofState, setProofState] = useState<ProofState>('idle');
+  const [proofError, setProofError] = useState<string | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(text);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const sendProofNotice = async () => {
+    if (proofState === 'sending' || proofState === 'sent') return;
+    setProofState('sending');
+    setProofError(null);
+
+    try {
+      const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3072';
+      const response = await fetch(`${apiUrl}/meals/public/orders/${encodeURIComponent(orderId)}/proof-sent`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message = Array.isArray(errorData.message) ? errorData.message.join('\n') : errorData.message;
+        throw new Error(message || 'No pudimos registrar el aviso');
+      }
+
+      setProofState('sent');
+    } catch (error: any) {
+      console.error('Error al avisar el envío del comprobante:', error);
+      setProofError(`${error.message || 'No pudimos registrar el aviso'}\nPor favor intentá nuevamente.`);
+      setProofState('error');
+    }
   };
 
   return (
@@ -92,26 +130,26 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-white/70 text-sm">CVU</p>
                   <button
-                    onClick={() => copyToClipboard('0000003100030634838698')}
+                    onClick={() => copyToClipboard(CVU)}
                     className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded transition-colors"
                   >
-                    {copied ? '✓' : 'Copiar'}
+                    {copied === CVU ? '✓' : 'Copiar'}
                   </button>
                 </div>
-                <p className="font-mono text-lg text-white">0000003100030634838698</p>
+                <p className="font-mono text-lg text-white">{CVU}</p>
               </div>
 
               <div className="bg-black/30 p-4 rounded-lg">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-white/70 text-sm">Alias</p>
                   <button
-                    onClick={() => copyToClipboard('Juveconfe25')}
+                    onClick={() => copyToClipboard(ALIAS)}
                     className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded transition-colors"
                   >
-                    {copied ? '✓' : 'Copiar'}
+                    {copied === ALIAS ? '✓' : 'Copiar'}
                   </button>
                 </div>
-                <p className="font-semibold text-lg text-white">Juveconfe25</p>
+                <p className="font-semibold text-lg text-white">{ALIAS}</p>
               </div>
 
               <div className="bg-black/30 p-4 rounded-lg">
@@ -146,6 +184,41 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
               </li>
             </ul>
           </div>
+
+          {/* Aviso de comprobante enviado (solo órdenes con comidas) */}
+          {hasMeals && (
+            <div className="bg-white/5 backdrop-blur-sm p-5 rounded-lg border border-white/10 mb-6">
+              <h3 className="text-white font-bold mb-2">¿Ya enviaste el comprobante?</h3>
+              <p className="text-white/70 text-sm mb-4">
+                Avisanos cuando hayas mandado el comprobante de la transferencia, así verificamos tu pago lo antes posible.
+              </p>
+
+              <button
+                type="button"
+                onClick={sendProofNotice}
+                disabled={proofState === 'sending' || proofState === 'sent'}
+                className="w-full sm:w-auto px-6 py-3 bg-[#8B3FFF] hover:bg-[#7B2FEF] text-white rounded-lg font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {proofState === 'sending'
+                  ? 'Enviando...'
+                  : proofState === 'sent'
+                    ? 'Comprobante enviado ✓'
+                    : 'Ya envié el comprobante'}
+              </button>
+
+              {proofState === 'sent' && (
+                <p role="status" className="mt-4 text-sm text-[#CCFF00]">
+                  ¡Gracias! Registramos que enviaste el comprobante. Vamos a verificar tu pago y te avisamos por email.
+                </p>
+              )}
+
+              {proofState === 'error' && proofError && (
+                <p role="alert" className="mt-4 text-sm text-red-300 whitespace-pre-line">
+                  {proofError}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Botón volver */}
           <div className="text-center">

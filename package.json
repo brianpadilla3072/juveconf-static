@@ -9,6 +9,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.6.13",
     "@astrojs/node": "^9.5.0",
     "@astrojs/react": "^4.4.0",
     "@tailwindcss/vite": "^4.1.15",
@@ -22,6 +23,7 @@
     "tailwindcss": "^4.1.15"
   },
   "devDependencies": {
-    "@types/qrcode": "^1.5.6"
+    "@types/qrcode": "^1.5.6",
+    "wrangler": "^4.132.0"
   }
 }

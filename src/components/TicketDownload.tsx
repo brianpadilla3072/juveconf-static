@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
+import { describeMealSelection, type MealSelectionItem } from '../lib/meals';
 
 interface TicketDownloadProps {
   paymentId: string;
@@ -13,6 +14,9 @@ interface Invitee {
   email?: string;
   phone?: string;
   paymentId: string;
+  // Solo eventos con comidas habilitadas (null / vacío en el resto)
+  registrationCode?: string | null;
+  MealSelection?: MealSelectionItem[] | null;
   Order: {
     eventId: string;
   } | null;
@@ -71,7 +75,7 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(28);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('JUVECONF 2025', 105, 20, { align: 'center' });
+      pdf.text(`JUVECONF ${new Date().getFullYear()}`, 105, 20, { align: 'center' });
 
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
@@ -115,6 +119,24 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
         pdf.text(invitee.email, 25, startY + 8 + lineHeight * 2 + 12);
       }
 
+      // Comidas elegidas (solo si el invitado tiene): columna izquierda, debajo de los datos
+      const meals = describeMealSelection(invitee.MealSelection);
+      if (meals.length > 0) {
+        let mealY = (invitee.email ? startY + 8 + lineHeight * 2 + 12 : startY + 8 + lineHeight + 6) + 11;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('COMIDAS ELEGIDAS:', 25, mealY);
+        mealY += 6;
+        pdf.setFontSize(9);
+        pdf.setTextColor(0, 0, 0);
+        meals.forEach((meal) => {
+          const lines: string[] = pdf.splitTextToSize(`${meal.label}: ${meal.name}`, 100);
+          pdf.text(lines, 25, mealY);
+          mealY += lines.length * 5;
+        });
+      }
+
       // Generar QR Code con formato del scanner
       const qrContent = `inviteId: ${invitee.id}\npaymentId: ${invitee.paymentId}`;
       const qrDataUrl = await QRCode.toDataURL(qrContent, {
@@ -135,6 +157,19 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
       pdf.setFont('helvetica', 'italic');
       pdf.text('Escaneá este código', 160, 145, { align: 'center' });
       pdf.text('al ingresar al evento', 160, 150, { align: 'center' });
+
+      // Código de inscripción (solo si el invitado tiene)
+      if (invitee.registrationCode) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('CÓDIGO', 160, 157, { align: 'center' });
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(invitee.registrationCode, 160, 163.5, { align: 'center' });
+        pdf.setFont('helvetica', 'italic'); // el pie siguiente usa el estilo anterior
+      }
 
       // ID de Pago (footer)
       pdf.setFontSize(8);
@@ -182,7 +217,7 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
       pdf.text('A la medida de la estatura de la plenitud de Cristo', 105, 286, { align: 'center' });
 
       // Guardar PDF
-      pdf.save(`JuveConf_2025_${invitee.name.replace(/\s+/g, '_')}.pdf`);
+      pdf.save(`JuveConf_${new Date().getFullYear()}_${invitee.name.replace(/\s+/g, '_')}.pdf`);
 
     } catch (err: any) {
       alert(`Error al generar el PDF: ${err.message}`);
@@ -290,7 +325,7 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
           </h1>
 
           <p className="text-white/80 text-lg">
-            Descarga tus entradas para JUVECONF 2025
+            Descarga tus entradas para JUVECONF {new Date().getFullYear()}
           </p>
 
           <div className="h-1 w-20 bg-gradient-to-r from-[#8B3FFF] to-[#8B3FFF] rounded-full my-4 mx-auto"></div>
@@ -352,6 +387,7 @@ interface InviteeCardProps {
 
 function InviteeCard({ invitee, onDownload, isDownloading }: InviteeCardProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const meals = describeMealSelection(invitee.MealSelection);
 
   useEffect(() => {
     generateQR();
@@ -389,7 +425,22 @@ function InviteeCard({ invitee, onDownload, isDownloading }: InviteeCardProps) {
       <div className="text-center">
         <p className="text-white font-bold text-lg">{invitee.name}</p>
         <p className="text-white/60 text-sm">DNI: {invitee.cuil}</p>
+        {invitee.registrationCode && (
+          <p className="mt-1 font-mono font-bold tracking-wider text-[#CCFF00]">{invitee.registrationCode}</p>
+        )}
       </div>
+
+      {/* Comidas elegidas (solo si el invitado tiene) */}
+      {meals.length > 0 && (
+        <ul className="w-full space-y-1 border-t border-white/10 pt-3 text-sm">
+          {meals.map((meal) => (
+            <li key={meal.code} className="flex justify-between gap-3">
+              <span className="text-white/60">{meal.label}</span>
+              <span className="text-white text-right">{meal.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* Botón de descarga */}
       <button

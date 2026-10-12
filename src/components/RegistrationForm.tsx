@@ -1,4 +1,57 @@
-import { useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import type { GuestExtra, GuestExtraErrors, MealPick, MealsConfig } from '../lib/meals';
+
+// Todo lo de comidas se carga bajo demanda, solo cuando el evento las tiene habilitadas (chunks separados).
+type MealsLib = typeof import('../lib/meals');
+const loadMealsLib = () => import('../lib/meals');
+const loadGuestExtraFields = () => import('./GuestExtraFields');
+const loadMealsStep = () => import('./MealsStep');
+const GuestExtraFields = lazy(loadGuestExtraFields);
+const MealsStep = lazy(loadMealsStep);
+const MealsSummary = lazy(() => loadMealsStep().then((m) => ({ default: m.MealsSummary })));
+
+type Step = 'form' | 'meals' | 'summary';
+const STEPS: Step[] = ['form', 'meals', 'summary'];
+const STEP_LABELS = ['Datos', 'Comidas', 'Resumen'];
+
+interface GuestData {
+  name: string;
+  dni: string;
+  birthdate: string;
+  phone: string;
+  email: string;
+  city: string;
+  church: string;
+  merchandiseSizes?: Record<string, string>;
+  // Solo se usan cuando el evento tiene comidas habilitadas
+  extra: GuestExtra;
+  meals: MealPick[];
+}
+
+const emptyGuestExtra = (): GuestExtra => ({
+  group: '',
+  lodgingNeeded: false,
+  lodgingNights: [],
+  dietary: '',
+  emergencyName: '',
+  emergencyPhone: '',
+  guardianName: '',
+  guardianDni: '',
+  guardianPhone: '',
+});
+
+const emptyGuest = (): GuestData => ({
+  name: '',
+  dni: '',
+  birthdate: '',
+  phone: '',
+  email: '',
+  city: '',
+  church: '',
+  merchandiseSizes: {},
+  extra: emptyGuestExtra(),
+  meals: [],
+});
 
 interface RegistrationFormProps {
   selectedPackage: {
@@ -20,10 +73,12 @@ interface RegistrationFormProps {
       };
     };
   };
+  /** Configuración de comidas del evento; null si están deshabilitadas (el formulario funciona como siempre). */
+  meals?: MealsConfig | null;
   onBack: () => void;
 }
 
-export default function RegistrationForm({ selectedPackage, onBack }: RegistrationFormProps) {
+export default function RegistrationForm({ selectedPackage, meals = null, onBack }: RegistrationFormProps) {
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
@@ -31,18 +86,27 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
   });
 
   const [numGuests, setNumGuests] = useState(1);
-  const [guestData, setGuestData] = useState<Array<{
-    name: string;
-    dni: string;
-    birthdate: string;
-    phone: string;
-    email: string;
-    city: string;
-    church: string;
-    merchandiseSizes?: Record<string, string>;
-  }>>([
-    { name: '', dni: '', birthdate: '', phone: '', email: '', city: '', church: '', merchandiseSizes: {} }
-  ]);
+  const [guestData, setGuestData] = useState<GuestData[]>([emptyGuest()]);
+
+  // Flujo con comidas: datos -> comidas -> resumen
+  const [step, setStep] = useState<Step>('form');
+  const [attempted, setAttempted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [mealsLib, setMealsLib] = useState<MealsLib | null>(null);
+
+  // Con comidas: precarga los módulos para que los pasos abran al instante
+  useEffect(() => {
+    if (!meals) return;
+    void loadMealsLib().then(setMealsLib);
+    void loadGuestExtraFields();
+    void loadMealsStep();
+  }, [meals]);
+
+  // Errores inline de los datos adicionales. Se recalculan en cada render: desaparecen a medida que se corrigen.
+  const guestErrors: GuestExtraErrors[] =
+    mealsLib && attempted ? guestData.map((g) => mealsLib.validateGuestExtras(g)) : [];
 
   // Cálculos de precio dinámicos
   const pricePerPerson = selectedPackage.precio;
@@ -65,7 +129,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
     if (newNum > guestData.length) {
       // Agregar invitados vacíos
       for (let i = guestData.length; i < newNum; i++) {
-        newGuestData.push({ name: '', dni: '', birthdate: '', phone: '', email: '', city: '', church: '', merchandiseSizes: {} });
+        newGuestData.push(emptyGuest());
       }
     } else {
       // Reducir invitados
@@ -89,11 +153,34 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
     setGuestData(newGuestData);
   };
 
-  const handleSubmit = async (paymentMethod: string) => {
+  const handleGuestExtraChange = (index: number, patch: Partial<GuestExtra>) => {
+    setGuestData((prev) => prev.map((g, i) => (i === index ? { ...g, extra: { ...g.extra, ...patch } } : g)));
+  };
+
+  const handleGuestMealsChange = (index: number, picks: MealPick[]) => {
+    setGuestData((prev) => prev.map((g, i) => (i === index ? { ...g, meals: picks } : g)));
+  };
+
+  const goToStep = (next: Step) => {
+    setStep(next);
+    setSubmitError(null);
+    setTimeout(() => document.getElementById('registro')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
+  // Mensaje de error inline (solo se muestra si hay errores, que solo existen con comidas habilitadas)
+  const fieldError = (message?: string) =>
+    message ? (
+      <p role="alert" data-field-error className="text-xs text-red-400">
+        {message}
+      </p>
+    ) : null;
+
+  // Validación de comprador, invitados y talles. Muestra un alert y devuelve false si falta algo.
+  const validateBase = (): boolean => {
     // Validar formulario
     if (!formData.email || !formData.phone || !formData.dni) {
       alert('Por favor completa todos los campos del comprador');
-      return;
+      return false;
     }
 
     // Validar invitados
@@ -101,7 +188,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
       const guest = guestData[i];
       if (!guest.name || !guest.dni || !guest.birthdate || !guest.phone || !guest.email || !guest.city || !guest.church) {
         alert(`Por favor completa todos los campos del invitado ${i + 1}`);
-        return;
+        return false;
       }
 
       // Validar talles de merchandising si el paquete lo requiere
@@ -110,22 +197,49 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
         for (const merch of requiredMerch) {
           if (!guest.merchandiseSizes?.[merch.type]) {
             alert(`Por favor selecciona la talla de ${merch.label} para el invitado ${i + 1}`);
-            return;
+            return false;
           }
         }
       }
     }
 
+    return true;
+  };
+
+  // Paso "datos" -> "comidas" (solo con comidas habilitadas)
+  const handleContinue = async () => {
+    setAttempted(true);
+    if (!validateBase()) return;
+
+    const lib = mealsLib ?? (await loadMealsLib());
+    if (guestData.some((g) => Object.keys(lib.validateGuestExtras(g)).length > 0)) {
+      // Ir al primer error una vez renderizados los mensajes
+      setTimeout(() => document.querySelector('[data-field-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+      return;
+    }
+
+    goToStep('meals');
+  };
+
+  const handleSubmit = async (paymentMethod: string) => {
+    if (!validateBase()) return;
+
     // Mostrar loading
-    const submitButton = document.activeElement as HTMLButtonElement;
+    const submitButton = meals ? null : (document.activeElement as HTMLButtonElement);
     if (submitButton) {
       submitButton.disabled = true;
       submitButton.textContent = 'Procesando...';
+    }
+    if (meals) {
+      setSubmitting(true);
+      setSubmitError(null);
     }
 
     try {
       const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3072';
       const eventId = import.meta.env.PUBLIC_EVENT_ID;
+
+      const lib = meals ? await loadMealsLib() : null;
 
       // Formatear attendees para el backend
       const attendees = guestData.map(guest => ({
@@ -137,8 +251,11 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
           birthdate: guest.birthdate,
           city: guest.city,
           church: guest.church,
-          merchandiseSizes: guest.merchandiseSizes || {}
-        })
+          merchandiseSizes: guest.merchandiseSizes || {},
+          // Con comidas: datos adicionales de inscripción (el servidor los valida)
+          ...(lib ? lib.buildExtraMetadata(guest) : {})
+        }),
+        ...(meals ? { meals: guest.meals } : {})
       }));
 
       // Determinar tipo de pago
@@ -177,8 +294,10 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear la orden');
+        const errorData = await response.json().catch(() => ({}));
+        // El servidor puede devolver `message` como string o como lista de errores
+        const message = Array.isArray(errorData.message) ? errorData.message.join('\n') : errorData.message;
+        throw new Error(message || 'Error al crear la orden');
       }
 
       const result = await response.json();
@@ -191,10 +310,16 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
 
       // Si es transferencia/efectivo, redirigir a página de confirmación
       const orderId = result.orderID;
-      window.location.href = `/confirmacion?orderId=${orderId}`;
+      window.location.href = `/confirmacion?orderId=${orderId}${meals ? '&meals=1' : ''}`;
 
     } catch (error: any) {
       console.error('Error al crear orden:', error);
+      if (meals) {
+        // Con comidas el error se muestra en el resumen, sin alert
+        setSubmitError(error.message || 'Error al crear la orden');
+        setSubmitting(false);
+        return;
+      }
       alert(`Error al procesar tu orden: ${error.message}. Por favor intenta nuevamente.`);
 
       // Restaurar botón
@@ -276,9 +401,59 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
               <div className="text-sm text-center text-white/80">
                 Completa tus datos para asegurar tu lugar
               </div>
+
+              {meals && (
+                <ol aria-label="Pasos de la inscripción" className="flex flex-wrap items-center justify-center gap-2 mt-2 text-xs">
+                  {STEP_LABELS.map((label, i) => {
+                    const current = STEPS.indexOf(step);
+                    return (
+                      <li
+                        key={label}
+                        aria-current={i === current ? 'step' : undefined}
+                        className={`px-3 py-1 rounded-full border ${
+                          i === current
+                            ? 'bg-[#8B3FFF] border-[#8B3FFF] text-white'
+                            : i < current
+                              ? 'border-[#CCFF00]/60 text-[#CCFF00]'
+                              : 'border-white/20 text-white/50'
+                        }`}
+                      >
+                        {i + 1}. {label}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
             </div>
           </div>
 
+          {/* Pasos "comidas" y "resumen" (solo con comidas habilitadas; se cargan bajo demanda) */}
+          {meals && step !== 'form' && (
+            <Suspense fallback={<p className="text-center text-white/70 py-10">Cargando...</p>}>
+              {step === 'meals' ? (
+                <MealsStep
+                  config={meals}
+                  guests={guestData}
+                  onChange={handleGuestMealsChange}
+                  onBack={() => goToStep('form')}
+                  onContinue={() => goToStep('summary')}
+                />
+              ) : (
+                <MealsSummary
+                  config={meals}
+                  guests={guestData}
+                  entrance={{ title: selectedPackage.titulo, unitPrice: pricePerPerson, quantity: numGuests }}
+                  submitting={submitting}
+                  error={submitError}
+                  onBack={() => goToStep('meals')}
+                  onSubmit={() => handleSubmit('cash')}
+                />
+              )}
+            </Suspense>
+          )}
+
+          {step === 'form' && (
+          <>
           {/* Contenido principal */}
           <div className="p-0">
             <div className="flex flex-col gap-6 mt-5">
@@ -466,7 +641,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                   </div>
 
                   {/* Lista de invitados */}
-                  <div className="space-y-4 max-h-[550px] overflow-y-auto p-2 border border-white/10 rounded-lg">
+                  <div className={meals ? 'space-y-4 p-2 border border-white/10 rounded-lg' : 'space-y-4 max-h-[550px] overflow-y-auto p-2 border border-white/10 rounded-lg'}>
                     {guestData.map((guest, index) => (
                       <div key={index} className="space-y-4 bg-black/20 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                         <div className="flex items-center gap-2 text-sm text-white/80">
@@ -520,11 +695,12 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                               className="bg-black/20 text-white/80 backdrop-blur-sm p-4 rounded-lg border border-white/10 hover:border-white/20 focus:border-[#8B3FFF]/50 focus:ring-1 focus:ring-[#8B3FFF]/30 transition-colors"
                               required
                             />
+                            {fieldError(guestErrors[index]?.birthdate)}
                           </div>
 
                           <div className="grid gap-2">
                             <label className="text-sm font-medium text-white/80" htmlFor={`guest-phone-${index}`}>
-                              Número de Teléfono
+                              {meals ? 'Número de Teléfono (WhatsApp)' : 'Número de Teléfono'}
                             </label>
                             <input
                               type="tel"
@@ -535,6 +711,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                               placeholder="291 5035 6245"
                               required
                             />
+                            {fieldError(guestErrors[index]?.phone)}
                           </div>
 
                           <div className="grid gap-2">
@@ -605,6 +782,19 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                               </select>
                             </div>
                           ))}
+
+                          {/* Datos adicionales (solo con comidas habilitadas) */}
+                          {meals && (
+                            <Suspense fallback={null}>
+                              <GuestExtraFields
+                                index={index}
+                                birthdate={guest.birthdate}
+                                extra={guest.extra}
+                                errors={guestErrors[index] ?? {}}
+                                onChange={(patch) => handleGuestExtraChange(index, patch)}
+                              />
+                            </Suspense>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -764,7 +954,7 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
               {/* Botón Efectivo/Transferencia */}
               <button
                 type="button"
-                onClick={() => handleSubmit('cash')}
+                onClick={() => (meals ? handleContinue() : handleSubmit('cash'))}
                 className="w-full flex items-center justify-center gap-3
                            bg-gradient-to-r from-[#8B3FFF] to-[#8B3FFF]
                            hover:from-[#7A35E6] hover:to-[#7A35E6]
@@ -773,16 +963,20 @@ export default function RegistrationForm({ selectedPackage, onBack }: Registrati
                            hover:border-[#8B3FFF]/40 transition-all duration-300
                            transform hover:-translate-y-0.5 active:scale-95"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="8" cy="8" r="6"></circle>
-                  <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
-                  <path d="M7 6h1v4"></path>
-                  <path d="m16.71 13.88.7.71-2.82 2.82"></path>
-                </svg>
-                Efectivo y transferencia
+                {!meals && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="8" cy="8" r="6"></circle>
+                    <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
+                    <path d="M7 6h1v4"></path>
+                    <path d="m16.71 13.88.7.71-2.82 2.82"></path>
+                  </svg>
+                )}
+                {meals ? 'Continuar: elegir comidas' : 'Efectivo y transferencia'}
               </button>
             </div>
           </div>
+          </>
+          )}
 
           {/* Footer - Logo JUVECONFE */}
           <div className="flex justify-end items-center gap-4 mt-8 px-6">
