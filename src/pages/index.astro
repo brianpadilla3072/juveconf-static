@@ -4,6 +4,7 @@ export const prerender = true;
 
 import Hero from '../components/Hero';
 import CombosGrid from '../components/CombosGrid';
+import TeamsButton from '../components/TeamsButton';
 import Church from '../components/Church';
 import Footer from '../components/Footer';
 import '../styles/global.css';
@@ -21,6 +22,7 @@ import '../styles/global.css';
 	<body class="min-h-screen bg-white">
 		<Hero client:load />
 		<CombosGrid client:load />
+		<TeamsButton client:load />
 		<Church client:load />
 		<!-- <Footer client:load /> -->
 	</body> 

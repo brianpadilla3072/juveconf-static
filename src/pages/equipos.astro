@@ -1,0 +1,22 @@
+---
+export const prerender = true;
+
+import TeamRegistration from '../components/TeamRegistration';
+import '../styles/global.css';
+
+// URL: /equipos            -> inscribir un equipo nuevo
+// URL: /equipos?id=&token= -> editar un equipo ya inscripto (link privado del líder)
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png+xml" href="/icon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Inscripción de equipos - JUVECONF</title>
+		<meta name="description" content="Inscribí a tu equipo en JUVECONF" />
+	</head>
+	<body class="min-h-screen bg-black">
+		<TeamRegistration client:only="react" />
+	</body>
+</html>
