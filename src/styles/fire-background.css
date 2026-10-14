@@ -1,0 +1,26 @@
+/* Fondo reutilizable (FireBackground): brasas de la fogata del diseño (public/hero/brasas.webp), oscurecidas.
+   El contenedor debe tener position: relative y overflow: hidden; el contenido va con z-index >= 1. */
+.fire-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fire-bg__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: var(--fire-bg-focus, 50% 88%);
+  /* brasas.webp ya viene desenfocada y simétrica (fondo del diseño + su espejo), así ambos lados tienen el mismo brillo */
+  filter: brightness(0.55) saturate(1.1);
+}
+.fire-bg__shade {
+  position: absolute;
+  inset: 0;
+  /* arriba funde a negro (une con la portada); abajo queda apenas oscuro para empalmar con el cronograma */
+  background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.25) 18%, rgba(0, 0, 0, 0.1) 60%, rgba(0, 0, 0, 0.3) 100%);
+}

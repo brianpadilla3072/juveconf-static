@@ -75,7 +75,7 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(28);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(`JUVECONF ${new Date().getFullYear()}`, 105, 20, { align: 'center' });
+      pdf.text(`JUVECONFE ${new Date().getFullYear()}`, 105, 20, { align: 'center' });
 
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
@@ -214,10 +214,10 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
       pdf.text('JUVECONFE', 105, 280, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
-      pdf.text('A la medida de la estatura de la plenitud de Cristo', 105, 286, { align: 'center' });
+      pdf.text('Consumidos en el altar - Romanos 12:1', 105, 286, { align: 'center' });
 
       // Guardar PDF
-      pdf.save(`JuveConf_${new Date().getFullYear()}_${invitee.name.replace(/\s+/g, '_')}.pdf`);
+      pdf.save(`JUVECONFE_${new Date().getFullYear()}_${invitee.name.replace(/\s+/g, '_')}.pdf`);
 
     } catch (err: any) {
       alert(`Error al generar el PDF: ${err.message}`);
@@ -325,7 +325,7 @@ export default function TicketDownload({ paymentId }: TicketDownloadProps) {
           </h1>
 
           <p className="text-white/80 text-lg">
-            Descarga tus entradas para JUVECONF {new Date().getFullYear()}
+            Descargá tus entradas para JUVECONFE {new Date().getFullYear()}
           </p>
 
           <div className="h-1 w-20 bg-gradient-to-r from-[#8B3FFF] to-[#8B3FFF] rounded-full my-4 mx-auto"></div>

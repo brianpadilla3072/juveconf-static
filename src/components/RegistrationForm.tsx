@@ -1,3 +1,4 @@
+import FireBackground from './FireBackground';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { GuestExtra, GuestExtraErrors, MealPick, MealsConfig } from '../lib/meals';
 
@@ -59,6 +60,7 @@ interface RegistrationFormProps {
     titulo: string;
     descripcion: string;
     precio: number;
+    gratuito?: boolean;
     personsIncluded: number;
     maxPersons?: number;
     metadata?: {
@@ -107,6 +109,12 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
   // Errores inline de los datos adicionales. Se recalculan en cada render: desaparecen a medida que se corrigen.
   const guestErrors: GuestExtraErrors[] =
     mealsLib && attempted ? guestData.map((g) => mealsLib.validateGuestExtras(g)) : [];
+
+  // Combo gratuito: no se piden datos de comprador, se usan los del primer invitado
+  const buyerIsFirstGuest = selectedPackage.gratuito;
+  const buyer = buyerIsFirstGuest
+    ? { email: guestData[0]?.email ?? '', phone: guestData[0]?.phone ?? '', dni: guestData[0]?.dni ?? '' }
+    : formData;
 
   // Cálculos de precio dinámicos
   const pricePerPerson = selectedPackage.precio;
@@ -178,7 +186,8 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
   // Validación de comprador, invitados y talles. Muestra un alert y devuelve false si falta algo.
   const validateBase = (): boolean => {
     // Validar formulario
-    if (!formData.email || !formData.phone || !formData.dni) {
+    // Con combo gratuito el comprador es el invitado 1, que se valida abajo
+    if (!buyerIsFirstGuest && (!formData.email || !formData.phone || !formData.dni)) {
       alert('Por favor completa todos los campos del comprador');
       return false;
     }
@@ -265,9 +274,9 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
       // Crear payload según el formato esperado por el backend (CreatePreferenceDto)
       const orderPayload = {
         id: selectedPackage.id,                    // ID del combo
-        email: formData.email,
-        phone: formData.phone,
-        cuil: formData.dni,
+        email: buyer.email,
+        phone: buyer.phone,
+        cuil: buyer.dni,
         title: selectedPackage.titulo,             // Título del combo
         unit_price: pricePerPerson,                // Precio unitario
         quantity: numGuests,                       // Cantidad de personas
@@ -335,43 +344,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
       id="registro"
       className="relative w-full min-h-screen overflow-hidden bg-black"
     >
-      {/* Fondos (iguales a CombosGrid) */}
-      <img
-        src="/bg-texture-dark.png"
-        alt="Fondo texturizado"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ zIndex: 0 }}
-      />
-
-      <img
-        src="/inscripcion-desktop.jpg"
-        alt="Background Desktop"
-        className="hidden lg:block absolute inset-0 w-full h-full object-contain"
-        style={{
-          zIndex: 1,
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
-        }}
-      />
-
-      <img
-        src="/bg-texture-dark.png"
-        alt="Background Mobile"
-        className="lg:hidden absolute inset-0 w-full h-full object-contain"
-        style={{
-          zIndex: 1,
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
-        }}
-      />
-
-      <div
-        className="lg:hidden absolute inset-0 pointer-events-none"
-        style={{
-          zIndex: 2,
-          background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 15%, transparent 87%, rgb(0, 0, 0) 100%)'
-        }}
-      />
+      <FireBackground />
 
       {/* Contenido */}
       <div className="relative z-10 p-6 md:p-10 lg:p-12 xl:p-16">
@@ -557,7 +530,8 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                     </ul>
                   </div> */}
 
-                  {/* Formulario: Datos del Comprador */}
+                  {/* Formulario: Datos del Comprador (no se pide en combos gratuitos: se usa el invitado 1) */}
+                  {!buyerIsFirstGuest && (
                   <div className="space-y-6 border border-white/20 p-6 rounded-lg">
                     <div className="space-y-1">
                       <h3 className="text-lg font-medium text-white/90">Datos del comprador</h3>
@@ -627,6 +601,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Invitados */}
                   <div className="flex items-center justify-between bg-black/30 backdrop-blur-sm p-3 rounded-lg border border-white/20">
@@ -978,21 +953,9 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
           </>
           )}
 
-          {/* Footer - Logo JUVECONFE */}
-          <div className="flex justify-end items-center gap-4 mt-8 px-6">
-            <div className="text-right">
-              <p className="text-[#CCFF00] text-base lg:text-lg font-normal leading-tight">
-                CONFERENCIA JUVENIL<br/>
-                BAHIA BLANCA
-              </p>
-            </div>
-            <div className="bg-[#CCFF00] px-4 py-2 rounded">
-              <img
-                src="/icons/juveconfe.svg"
-                alt="JUVECONFE"
-                className="h-8 lg:h-10 w-auto"
-              />
-            </div>
+          {/* Footer - marca de la portada */}
+          <div className="flex justify-end items-center mt-8 px-6">
+            <img src="/hero/juveconfe.webp" alt="JUVECONFE" loading="lazy" className="w-[150px] lg:w-[190px] h-auto" />
           </div>
 
         </form>

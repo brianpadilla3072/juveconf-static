@@ -1,0 +1,159 @@
+/* Cronograma: replica la pieza C/a4475ab6-…jpeg (fondo de bosque desenfocado, título naranja,
+   día grande a la izquierda, línea vertical y actividades con horario a la derecha). */
+.crono {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* Fondo de la pieza original sin textos (ya viene desenfocado y oscurecido abajo) */
+.crono__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+/* Arriba se oscurece para empalmar con Inscripción; abajo, como en la pieza, el final se oscurece */
+.crono::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.55) 9%, rgba(0, 0, 0, 0.2) 18%, rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, 0.55) 84%, rgba(0, 0, 0, 0.88) 100%);
+  pointer-events: none;
+}
+
+.crono__inner {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: clamp(48px, 9vw, 96px) clamp(18px, 6vw, 40px) clamp(32px, 6vw, 56px);
+  --rule: rgba(255, 255, 255, 0.92);
+}
+
+.crono__title {
+  margin: 0 0 clamp(28px, 7vw, 56px);
+  text-align: center;
+  color: #c46810;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  font-size: clamp(56px, 17vw, 128px);
+}
+.crono__title span {
+  display: block;
+}
+
+/* Cada día: número | línea vertical | actividades */
+.crono__day {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) 2px minmax(0, 2fr);
+  column-gap: clamp(14px, 4vw, 32px);
+  align-items: stretch;
+  padding: clamp(20px, 4.5vw, 34px) 0;
+}
+.crono__day + .crono__day {
+  border-top: 2px solid var(--rule);
+}
+
+.crono__date {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.crono__number {
+  font-weight: 800;
+  font-size: clamp(56px, 17vw, 132px);
+  line-height: 0.95;
+}
+.crono__weekday {
+  font-weight: 300;
+  text-transform: uppercase;
+  font-size: clamp(17px, 5vw, 38px);
+  line-height: 1.1;
+}
+
+.crono__rule {
+  display: block;
+  width: 2px;
+  background: var(--rule);
+}
+
+.crono__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(10px, 2.6vw, 18px);
+}
+.crono__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: clamp(8px, 2.4vw, 24px);
+  align-items: start;
+}
+.crono__name {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(13px, 3.6vw, 24px);
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+}
+.crono__detail {
+  display: block;
+  font-weight: 300;
+  text-transform: none;
+  font-size: clamp(12px, 3vw, 17px);
+  line-height: 1.2;
+}
+.crono__time {
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: clamp(13px, 3.6vw, 24px);
+  line-height: 1.15;
+  min-width: 4.6em;
+}
+
+.crono__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: clamp(28px, 7vw, 48px);
+}
+.crono__tag {
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  font-size: clamp(12px, 3vw, 16px);
+}
+.crono__venue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-size: clamp(13px, 3.3vw, 18px);
+  line-height: 1.2;
+}
+.crono__venue:hover {
+  text-decoration: underline;
+}
+.crono__pin {
+  width: 1.4em;
+  height: 1.4em;
+  color: #c46810;
+  flex-shrink: 0;
+}

@@ -1,0 +1,22 @@
+---
+export const prerender = true;
+
+import RegistrationPage from '../components/RegistrationPage';
+import '../styles/global.css';
+
+// URL: /inscripcion?combo=<id> -> registro de entrada del combo elegido
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="/icon.png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Registro de Entrada - JUVECONFE</title>
+		<meta name="description" content="Inscribite en JUVECONFE 2026" />
+	</head>
+	<body class="min-h-screen bg-black">
+		<RegistrationPage client:only="react" />
+	</body>
+</html>

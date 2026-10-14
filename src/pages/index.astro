@@ -4,8 +4,7 @@ export const prerender = true;
 
 import Hero from '../components/Hero';
 import CombosGrid from '../components/CombosGrid';
-import TeamsButton from '../components/TeamsButton';
-import Church from '../components/Church';
+import Cronograma from '../components/Cronograma';
 import Footer from '../components/Footer';
 import '../styles/global.css';
 ---
@@ -13,17 +12,18 @@ import '../styles/global.css';
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/png+xml" href="/icon.png" />
+		<link rel="icon" type="image/png" href="/icon.png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>JUVECONF</title>
-		<meta name="description" content="Conferencia Juvenil JUVECONF - A la medida de la estatura de la plenitud de Cristo, Bahía Blanca" />
+		<title>JUVECONFE</title>
+		<link rel="preload" as="image" href="/hero/fondo.webp" fetchpriority="high" />
+		<meta name="description" content="JUVECONFE 2026 - Consumidos en el altar (Romanos 12:1). Conferencia juvenil en Bahía Blanca." />
 	</head>
 	<body class="min-h-screen bg-white">
-		<Hero client:load />
+		<Hero />
 		<CombosGrid client:load />
-		<TeamsButton client:load />
-		<Church client:load />
+		<Cronograma />
 		<!-- <Footer client:load /> -->
 	</body> 
 </html>

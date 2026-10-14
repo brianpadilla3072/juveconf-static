@@ -46,10 +46,9 @@ export default function Footer() {
               {/* Versículo */}
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 sm:p-6">
                 <p className="text-white/90 text-sm sm:text-base leading-relaxed break-words">
-                  "A LA MEDIDA DE LA ESTATURA<br/>
-                  DE LA PLENITUD DE CRISTO"<br/>
+                  "AMADOS HERMANOS, LES RUEGO QUE ENTREGUEN SU CUERPO A DIOS POR TODO LO QUE ÉL HA HECHO A FAVOR DE USTEDES. QUE SEA UN SACRIFICIO VIVO Y SANTO, LA CLASE DE SACRIFICIO QUE A ÉL LE AGRADA. ESA ES LA VERDADERA FORMA DE ADORARLO."<br/>
                   <span className="text-[#CCFF00] font-semibold text-xs sm:text-sm mt-2 block">
-                    EFESIOS 4:13
+                    ROMANOS 12:1 · NTV
                   </span>
                 </p>
               </div>

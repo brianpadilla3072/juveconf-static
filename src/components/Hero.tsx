@@ -1,42 +1,38 @@
+import '../styles/hero.css';
+
+// Portada "Consumidos en el altar" (diseño C/C.png). El fondo es el del diseño sin los
+// textos, y cada texto es una capa (exportada de los SVG del diseño) ubicada en las mismas
+// coordenadas del póster. El posicionamiento está en src/styles/hero.css.
+
 export default function Hero() {
   return (
-    <section className="relative w-full h-screen overflow-hidden bg-black">
-      {/* Capa 1: Fondo base negro texturizado (siempre visible) */}
+    <section className="hero text-white">
+      <h1 className="sr-only">JUVECONFE 2026 — Consumidos en el altar (Romanos 12:1)</h1>
+
+      <img src="/hero/fondo.webp" alt="" aria-hidden="true" fetchPriority="high" className="hero__bg" />
+      <div aria-hidden="true" className="hero__shade" />
+      <div aria-hidden="true" className="hero__fade" />
+
+      <img src="/hero/juveconfe.webp" alt="JUVECONFE" className="hero__layer hero__brand" />
       <img
-        src="/bg-texture-dark.png"
-        alt="Fondo texturizado"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ zIndex: 0 }}
+        src="/hero/consumidos.webp"
+        alt="Consumidos en el altar — Romanos 12:1"
+        className="hero__layer hero__logo"
       />
 
-      {/* Capa 2: Desktop - Imagen principal */}
+      <div className="hero__info">
+        <img src="/hero/fecha.webp" alt="21 al 23 de noviembre, Bahía Blanca" className="hero__fecha" />
+        <span aria-hidden="true" className="hero__divider" />
+        <img src="/hero/orador.webp" alt="Orador: Marcos Arévalo" className="hero__orador" />
+      </div>
+
+      {/* Iglesias organizadoras: fila extraída del diseño (logos + divisores) */}
       <img
-        src="/hero-desktop.webp"
-        alt="JUVECONF Desktop"
-        className="hidden lg:block absolute inset-0 w-full h-full object-cover"
-        style={{ zIndex: 1 }}
+        src="/hero/iglesias.webp"
+        alt="Iglesias organizadoras: Vida Eterna, ICE Cerri e ICE Chiclana"
+        className="hero__layer hero__churches"
       />
 
-      {/* Capa 2: Mobile/Tablet - Imagen principal */}
-      <img
-        src="/hero-mobile.webp"
-        alt="JUVECONF Mobile"
-        className="lg:hidden absolute inset-0 w-full h-full object-contain"
-        style={{
-          zIndex: 1,
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
-        }}
-      />
-
-      {/* Capa 3: Degradados superior e inferior para suavizar uniones (solo mobile/tablet) */}
-      <div
-        className="lg:hidden absolute inset-0 pointer-events-none"
-        style={{
-          zIndex: 2,
-          background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 15%, transparent 87%, rgb(0, 0, 0) 100%)'
-        }}
-      />
     </section>
   );
 }

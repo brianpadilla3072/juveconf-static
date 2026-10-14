@@ -21,8 +21,8 @@ export interface TeamPlayerInput {
 export interface TeamView {
   id: string;
   name: string;
-  leaderName: string;
-  leaderPhone: string;
+  leaderName: string | null;
+  leaderPhone: string | null;
   leaderEmail: string | null;
   teamType: { id: string; name: string; minPlayers: number; maxPlayers: number };
   players: Required<TeamPlayerInput>[];
@@ -32,8 +32,8 @@ export interface TeamView {
 
 export interface TeamPayload {
   name: string;
-  leaderName: string;
-  leaderPhone: string;
+  leaderName?: string;
+  leaderPhone?: string;
   leaderEmail?: string;
   players: TeamPlayerInput[];
 }
