@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import FireBackground from './FireBackground';
 import {
   createTeam,
+  createTeamOrder,
   editLink,
   fetchTeam,
   fetchTeamTypes,
   filledPlayers,
+  orderConfirmationHref,
   updateTeam,
   type TeamPlayerInput,
   type TeamTypeOption,
@@ -26,6 +28,7 @@ const labelClass = 'block text-sm font-medium text-white/90 mb-2';
 
 const emptyPlayer = (): TeamPlayerInput => ({ firstName: '', lastName: '' });
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const money = (value: number) => `$${value.toLocaleString('es-AR')}`;
 
 type Mode = 'loading' | 'create' | 'edit' | 'created' | 'error';
 
@@ -36,6 +39,10 @@ export default function TeamRegistration() {
   const [typeId, setTypeId] = useState('');
   const [name, setName] = useState('');
   const [players, setPlayers] = useState<TeamPlayerInput[]>([emptyPlayer()]);
+  const [leaderName, setLeaderName] = useState('');
+  const [leaderCuil, setLeaderCuil] = useState('');
+  const [leaderEmail, setLeaderEmail] = useState('');
+  const [leaderPhone, setLeaderPhone] = useState('');
   const [team, setTeam] = useState<TeamView | null>(null);
   const [token, setToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -80,7 +87,7 @@ export default function TeamRegistration() {
   // Un error de validación viejo no debe quedar visible una vez que se edita el formulario
   useEffect(() => {
     setError('');
-  }, [typeId, name, players]);
+  }, [typeId, name, players, leaderName, leaderCuil, leaderEmail, leaderPhone]);
 
   const currentType = useMemo(() => {
     if (mode === 'edit' && team) return { ...team.teamType, description: null, price: 0, remaining: null, full: false };
@@ -91,6 +98,8 @@ export default function TeamRegistration() {
   const max = currentType?.maxPlayers ?? 10;
   const min = currentType?.minPlayers ?? 1;
   const canAdd = players.length < max;
+  // Las categorías gratuitas se inscriben al instante; las pagas generan una orden de transferencia
+  const isPaid = !!currentType && currentType.price > 0;
 
   const setPlayer = (i: number, patch: Partial<TeamPlayerInput>) =>
     setPlayers((prev) => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
@@ -106,6 +115,13 @@ export default function TeamRegistration() {
     }
     if (rows.length < min) return `Este equipo necesita al menos ${plural(min, 'participante', 'participantes')}`;
     if (rows.length > max) return `Este equipo admite como máximo ${plural(max, 'participante', 'participantes')}`;
+    // Los datos del responsable solo son necesarios para procesar el pago de las categorías pagas
+    if (mode === 'create' && isPaid) {
+      if (leaderName.trim().length < 2) return 'Escribí el nombre y apellido del responsable del equipo';
+      if (!/^\d{7,11}$/.test(leaderCuil.replace(/\D/g, ''))) return 'Revisá el DNI del responsable (7 a 11 números)';
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(leaderEmail.trim())) return 'Revisá el email del responsable';
+      if (leaderPhone.replace(/\D/g, '').length < 6) return 'Revisá el teléfono del responsable';
+    }
     return null;
   };
 
@@ -132,7 +148,20 @@ export default function TeamRegistration() {
         setTeam(updated);
         fillForm(updated);
         setNotice('¡Cambios guardados!');
+      } else if (isPaid) {
+        // Inscripción con pago: se crea una orden y el equipo nace cuando se aprueba el pago
+        const { orderID } = await createTeamOrder({
+          teamTypeId: typeId,
+          name: name.trim(),
+          leaderName: leaderName.trim(),
+          leaderCuil: leaderCuil.replace(/\D/g, ''),
+          leaderEmail: leaderEmail.trim(),
+          leaderPhone: leaderPhone.trim(),
+          players: payload().players,
+        });
+        window.location.href = orderConfirmationHref(orderID);
       } else {
+        // Categoría gratuita: el equipo se crea al instante, sin pedir datos del responsable
         const created = await createTeam(typeId, payload());
         setTeam(created);
         setToken(created.editToken ?? '');
@@ -224,7 +253,11 @@ export default function TeamRegistration() {
 
   return shell(
     mode === 'edit' ? 'Editar mi equipo' : 'Inscribir mi equipo',
-    mode === 'edit' && team ? `Categoría: ${team.teamType.name}` : 'Elegí la categoría y cargá a los participantes',
+    mode === 'edit' && team
+      ? `Categoría: ${team.teamType.name}`
+      : isPaid
+        ? 'Elegí la categoría, cargá a los participantes y pagá la inscripción'
+        : 'Elegí la categoría y cargá a los participantes',
     <form onSubmit={submit} className="space-y-6" noValidate>
       {mode === 'create' && (
         <fieldset className={panelClass}>
@@ -264,7 +297,9 @@ export default function TeamRegistration() {
           )}
           {currentType?.description && <p className="text-sm text-white/70">{currentType.description}</p>}
           {currentType && currentType.price > 0 && (
-            <p className="text-sm text-white/70">Inscripción: ${currentType.price.toLocaleString('es-AR')}</p>
+            <p className="text-sm text-white/70">
+              Inscripción: <strong className="text-white">{money(currentType.price)}</strong> por equipo
+            </p>
           )}
         </fieldset>
       )}
@@ -318,6 +353,41 @@ export default function TeamRegistration() {
             {!canAdd && <p className="text-xs text-white/60">Llegaste al máximo de {max} participantes.</p>}
           </div>
 
+          {mode === 'create' && isPaid && (
+            <fieldset className={panelClass}>
+              <div className="space-y-1">
+                <h2 className={panelTitleClass}>Responsable del equipo</h2>
+                <p className={panelHintClass}>Con estos datos te avisamos cuando se acredite el pago y te mandamos el link para editar el equipo.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass} htmlFor="leaderName">
+                    Nombre y apellido
+                  </label>
+                  <input id="leaderName" value={leaderName} onChange={(e) => setLeaderName(e.target.value)} maxLength={80} placeholder="Ej: Ana Pérez" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="leaderCuil">
+                    DNI
+                  </label>
+                  <input id="leaderCuil" value={leaderCuil} onChange={(e) => setLeaderCuil(e.target.value)} inputMode="numeric" maxLength={11} placeholder="Sin puntos" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="leaderEmail">
+                    Email
+                  </label>
+                  <input id="leaderEmail" type="email" value={leaderEmail} onChange={(e) => setLeaderEmail(e.target.value)} maxLength={120} placeholder="tu@email.com" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="leaderPhone">
+                    Teléfono
+                  </label>
+                  <input id="leaderPhone" value={leaderPhone} onChange={(e) => setLeaderPhone(e.target.value)} inputMode="tel" maxLength={30} placeholder="Ej: 291 412 7933" className={inputClass} />
+                </div>
+              </div>
+            </fieldset>
+          )}
+
           {error && (
             <p role="alert" className="text-sm text-white p-3 rounded-lg border border-red-400/60 bg-red-500/15">
               {error}
@@ -329,8 +399,24 @@ export default function TeamRegistration() {
             </p>
           )}
 
+          {mode === 'create' && isPaid && currentType && (
+            <div className="flex items-center justify-between gap-3 p-4 rounded-lg border border-[#8B3FFF]/60 bg-gradient-to-r from-[#8B3FFF]/25 to-[#8B3FFF]/10">
+              <div>
+                <p className="text-sm text-white/80">Total a pagar</p>
+                <p className="text-xs text-white/60">El equipo queda inscripto cuando acreditamos el pago (aprox. 24 h).</p>
+              </div>
+              <span className="text-xl font-black text-white whitespace-nowrap">{money(currentType.price)}</span>
+            </div>
+          )}
+
           <button type="submit" disabled={submitting || (mode === 'create' && !currentType)} className={primaryButtonClass}>
-            {submitting ? 'Enviando…' : mode === 'edit' ? 'Guardar cambios' : 'Inscribir equipo'}
+            {submitting
+              ? 'Enviando…'
+              : mode === 'edit'
+                ? 'Guardar cambios'
+                : isPaid
+                  ? 'Continuar: pagar inscripción'
+                  : 'Confirmar inscripción'}
           </button>
         </>
       )}

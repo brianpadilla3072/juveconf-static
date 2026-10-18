@@ -87,3 +87,8 @@ export async function fetchPublishedPackages(apiUrl: string, eventId: string): P
 export function registrationHref(comboId: string): string {
   return `/inscripcion?combo=${encodeURIComponent(comboId)}`;
 }
+
+/** Un combo es gratis si el API lo marca como tal o si su precio es cero */
+export function esGratuito(pkg: { gratuito: boolean; precio: number }): boolean {
+  return pkg.gratuito || pkg.precio === 0;
+}

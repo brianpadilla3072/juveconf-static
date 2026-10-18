@@ -54,8 +54,8 @@ export default function MealsStep({ config, guests, onChange, onBack, onContinue
         <div className={`${panelClass} p-4 space-y-2`}>
           <h3 className="text-lg font-medium text-white/90">Elegí las comidas de cada invitado</h3>
           <p className="text-sm text-white/70">
-            Todas las comidas son opcionales: marcá solo las que quieras sumar. Se pagan junto con las entradas, en una
-            única transferencia.
+            Todas las comidas son opcionales. Con tu compra anticipada tenés hasta un 20% de descuento en las 4
+            comidas. Se paga en una única transferencia, al finalizar la inscripción.
           </p>
           {tiers.length > 0 && (
             <p className="text-sm text-[#CCFF00]">
@@ -212,6 +212,8 @@ interface MealsSummaryProps {
 
 export function MealsSummary({ config, guests, entrance, submitting, error, onBack, onSubmit }: MealsSummaryProps) {
   const entranceTotal = entrance.unitPrice * entrance.quantity;
+  const entranceIsFree = entrance.unitPrice === 0;
+  const entranceTotalLabel = entranceIsFree ? 'Gratis' : formatPrice(entranceTotal);
   const quotes = guests.map((guest) => quoteMeals(guest.meals, config));
   const mealsTotal = quotes.reduce((acc, q) => acc + q.total, 0);
 
@@ -230,11 +232,11 @@ export function MealsSummary({ config, guests, entrance, submitting, error, onBa
             <span className="break-words">
               {entrance.title} × {plural(entrance.quantity, 'persona', 'personas')}
             </span>
-            <span className="shrink-0">{formatPrice(entrance.unitPrice)} c/u</span>
+            <span className="shrink-0">{entranceIsFree ? 'Gratis' : `${formatPrice(entrance.unitPrice)} c/u`}</span>
           </div>
           <div className="flex justify-between font-medium text-white">
             <span>Total entradas</span>
-            <span>{formatPrice(entranceTotal)}</span>
+            <span>{entranceTotalLabel}</span>
           </div>
         </div>
 
@@ -285,7 +287,7 @@ export function MealsSummary({ config, guests, entrance, submitting, error, onBa
         <div className="rounded-lg bg-black/20 backdrop-blur-sm p-4 space-y-2 border border-white/20 text-white">
           <div className="flex justify-between text-sm">
             <span className="text-white/80">Entradas</span>
-            <span className="text-white/90">{formatPrice(entranceTotal)}</span>
+            <span className="text-white/90">{entranceTotalLabel}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-white/80">Comidas</span>

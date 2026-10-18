@@ -10,6 +10,8 @@ const BACK_HREF = '/#inscripcion';
 export default function RegistrationPage() {
   const [pkg, setPkg] = useState<Package | null>(null);
   const [meals, setMeals] = useState<MealsConfig | null>(null);
+  // Cantidad de combos publicados: si hay uno solo y es gratis, el formulario no muestra plan ni precios
+  const [totalCombos, setTotalCombos] = useState(1);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -28,6 +30,7 @@ export default function RegistrationPage() {
         ]);
         const found = combos.find((c) => c.id === comboId);
         if (!found) throw new Error('Ese combo ya no está disponible.');
+        setTotalCombos(combos.length);
         setPkg(found);
         setMeals(found.mealsEnabled ? mealsConfig : null);
       } catch (e: any) {
@@ -41,7 +44,7 @@ export default function RegistrationPage() {
     window.location.href = BACK_HREF;
   };
 
-  if (pkg) return <RegistrationForm selectedPackage={pkg} meals={meals} onBack={goBack} />;
+  if (pkg) return <RegistrationForm selectedPackage={pkg} meals={meals} totalCombos={totalCombos} onBack={goBack} />;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white flex items-center justify-center px-6">

@@ -77,10 +77,12 @@ interface RegistrationFormProps {
   };
   /** Configuración de comidas del evento; null si están deshabilitadas (el formulario funciona como siempre). */
   meals?: MealsConfig | null;
+  /** Cantidad de combos publicados del evento: con un único combo gratis no se muestra el plan ni los precios. */
+  totalCombos?: number;
   onBack: () => void;
 }
 
-export default function RegistrationForm({ selectedPackage, meals = null, onBack }: RegistrationFormProps) {
+export default function RegistrationForm({ selectedPackage, meals = null, totalCombos, onBack }: RegistrationFormProps) {
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
@@ -110,16 +112,28 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
   const guestErrors: GuestExtraErrors[] =
     mealsLib && attempted ? guestData.map((g) => mealsLib.validateGuestExtras(g)) : [];
 
+  // Cálculos de precio dinámicos
+  const pricePerPerson = selectedPackage.precio;
+  const isFree = selectedPackage.gratuito || pricePerPerson === 0;
+  const singleFree = isFree && (totalCombos ?? 1) <= 1;
+  const capacityOne = selectedPackage.personsIncluded === 1 && !(selectedPackage.maxPersons && selectedPackage.maxPersons > 1);
+  const personalDataOnly = isFree && capacityOne;
+  const showQuantitySelector = !personalDataOnly;
+  const hidePlanAndResumen = singleFree;
+  const totalPrice = pricePerPerson * numGuests;
+  const totalPriceWithSurcharge = Math.round(totalPrice * 1.26);
+
   // Combo gratuito: no se piden datos de comprador, se usan los del primer invitado
-  const buyerIsFirstGuest = selectedPackage.gratuito;
+  const buyerIsFirstGuest = isFree;
   const buyer = buyerIsFirstGuest
     ? { email: guestData[0]?.email ?? '', phone: guestData[0]?.phone ?? '', dni: guestData[0]?.dni ?? '' }
     : formData;
 
-  // Cálculos de precio dinámicos
-  const pricePerPerson = selectedPackage.precio;
-  const totalPrice = pricePerPerson * numGuests;
-  const totalPriceWithSurcharge = Math.round(totalPrice * 1.26);
+  // Un combo gratis no muestra $0 sino "Gratis"
+  const priceLabel = isFree ? 'Gratis' : `$${pricePerPerson.toLocaleString('es-AR')}`;
+  const totalLabel = isFree ? 'Gratis' : `$${totalPrice.toLocaleString('es-AR')}`;
+  // Texto del botón principal: los combos gratuitos no se pagan, solo se confirman
+  const payButtonLabel = meals ? 'Continuar: elegir comidas' : isFree ? 'Confirmar inscripción' : 'Efectivo y transferencia';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -334,7 +348,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
       // Restaurar botón
       if (submitButton) {
         submitButton.disabled = false;
-        submitButton.textContent = 'Efectivo y transferencia';
+        submitButton.textContent = payButtonLabel;
       }
     }
   };
@@ -366,7 +380,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
               </button>
 
               <div className="text-xl sm:text-2xl md:text-3xl font-bold text-center text-white break-words">
-                Registro de Entrada
+                Registro
               </div>
 
               <div className="h-1 w-20 bg-gradient-to-r from-[#8B3FFF] to-[#8B3FFF] rounded-full my-3 m-auto"></div>
@@ -432,6 +446,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
             <div className="flex flex-col gap-6 mt-5">
 
               {/* MOBILE: Plan Seleccionado */}
+              {!hidePlanAndResumen && (
               <div className="block md:hidden space-y-4">
                 <div className="bg-black/35 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div className="flex items-center gap-2 text-sm font-medium text-white mb-3">
@@ -453,13 +468,14 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                     <div className="mb-3">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                         <span className="text-2xl sm:text-3xl font-black text-white break-words">
-                          ${selectedPackage.precio.toLocaleString('es-AR')}
+                          {priceLabel}
                         </span>
-                        <span className="text-sm text-white/60 font-normal">por persona</span>
+                        {!isFree && <span className="text-sm text-white/60 font-normal">por persona</span>}
                       </div>
                     </div>
 
                     {/* Selector de cantidad */}
+                    {showQuantitySelector && (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-4">
                       <span className="text-white/80 text-sm font-medium">Cantidad de personas:</span>
                       <div className="flex items-center gap-2">
@@ -486,19 +502,21 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                         </button>
                       </div>
                     </div>
+                    )}
 
                     {/* Total */}
                     <div className="mt-4 pt-4 border-t border-white/20">
                       <div className="flex flex-wrap justify-between items-center gap-2">
                         <span className="text-white/80 text-sm">Total:</span>
                         <span className="text-xl sm:text-2xl font-black text-white break-words">
-                          ${totalPrice.toLocaleString('es-AR')}
+                          {totalLabel}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Grid 2 columnas */}
               <div className="grid md:grid-cols-2 gap-6">
@@ -611,7 +629,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                         <circle cx="9" cy="7" r="4"></circle>
                         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
                       </svg>
-                      <span className="text-white">Invitados ({numGuests})</span>
+                      <span className="text-white">{personalDataOnly ? 'Datos personales' : `Invitados (${numGuests})`}</span>
                     </div>
                   </div>
 
@@ -624,7 +642,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                           </svg>
-                          <span>Invitado {index + 1}</span>
+                          <span>{personalDataOnly ? 'Datos personales' : `Invitado ${index + 1}`}</span>
                         </div>
 
                         <div className="grid gap-4 m-1">
@@ -780,6 +798,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                 <div className="space-y-6 hidden md:block">
 
                   {/* Plan Seleccionado (Desktop) */}
+                  {!hidePlanAndResumen && (
                   <div className="space-y-4">
                     <div className="bg-black/30 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                       <div className="flex items-center gap-2 text-sm font-medium text-white mb-3">
@@ -801,13 +820,14 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                         <div className="mb-3">
                           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                             <span className="text-3xl font-black text-white break-words">
-                              ${selectedPackage.precio.toLocaleString('es-AR')}
+                              {priceLabel}
                             </span>
-                            <span className="text-sm text-white/60 font-normal">por persona</span>
+                            {!isFree && <span className="text-sm text-white/60 font-normal">por persona</span>}
                           </div>
                         </div>
 
                         {/* Selector de cantidad */}
+                        {showQuantitySelector && (
                         <div className="flex items-center gap-3 mt-4">
                           <span className="text-white/80 text-sm font-medium">Cantidad:</span>
                           <div className="flex items-center gap-2">
@@ -834,21 +854,24 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                             </button>
                           </div>
                         </div>
+                        )}
 
                         {/* Total */}
                         <div className="mt-4 pt-4 border-t border-white/20">
                           <div className="flex flex-wrap justify-between items-center gap-2">
                             <span className="text-white/80 text-sm">Total:</span>
                             <span className="text-2xl font-black text-white break-words">
-                              ${totalPrice.toLocaleString('es-AR')}
+                              {totalLabel}
                             </span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Resumen de Pago */}
+                  {!hidePlanAndResumen && (
                   <div className="space-y-4 mt-6">
                     <div className="flex items-center gap-2 text-sm font-medium text-white bg-black/30 backdrop-blur-sm p-3 rounded-lg border border-white/20">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#8B3FFF]">
@@ -865,14 +888,15 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-white/80">Precio por persona</span>
-                        <span className="text-white/90">${pricePerPerson.toLocaleString('es-AR')}</span>
+                        <span className="text-white/90">{priceLabel}</span>
                       </div>
                       <div className="flex justify-between font-medium text-lg">
                         <span className="text-white/90">Total</span>
-                        <span className="text-white">${totalPrice.toLocaleString('es-AR')}</span>
+                        <span className="text-white">{totalLabel}</span>
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Datos a Considerar (Desktop) */}
                   {/* <div className="space-y-4 p-4 bg-black/20 rounded-lg border border-white/10">
@@ -946,7 +970,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, onBack
                     <path d="m16.71 13.88.7.71-2.82 2.82"></path>
                   </svg>
                 )}
-                {meals ? 'Continuar: elegir comidas' : 'Efectivo y transferencia'}
+                {payButtonLabel}
               </button>
             </div>
           </div>

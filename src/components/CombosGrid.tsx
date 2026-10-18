@@ -7,12 +7,10 @@ import '@fontsource/poppins/800.css';
 import '../styles/inscripcion.css';
 import FireBackground from './FireBackground';
 import { fetchTeamTypes, type TeamTypeOption } from '../lib/teams';
-import type { MealsConfig } from '../lib/meals';
-import { fetchMealsConfig, fetchPublishedPackages, registrationHref, type Package } from '../lib/combos';
+import { fetchPublishedPackages, esGratuito, registrationHref, type Package } from '../lib/combos';
 
 export default function CombosGrid() {
   const [combos, setCombos] = useState<Package[]>([]);
-  const [meals, setMeals] = useState<MealsConfig | null>(null);
   const [teamTypes, setTeamTypes] = useState<TeamTypeOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,15 +25,13 @@ export default function CombosGrid() {
           throw new Error('Event ID no configurado');
         }
 
-        const [mappedCombos, mealsConfig, teams] = await Promise.all([
+        const [mappedCombos, teams] = await Promise.all([
           fetchPublishedPackages(apiUrl, eventId),
-          fetchMealsConfig(apiUrl, eventId),
           // Los equipos son opcionales: si falla, simplemente no se muestra su tarjeta
           fetchTeamTypes(eventId).catch(() => [] as TeamTypeOption[]),
         ]);
 
         setCombos(mappedCombos);
-        setMeals(mealsConfig);
         setTeamTypes(teams);
       } catch (err: any) {
         console.error('Error fetching combos:', err);
@@ -55,7 +51,7 @@ export default function CombosGrid() {
     return null;
   }
 
-  // No renderizar nada si no hay combos ni inscripción de equipos (después de cargar)
+  // No renderizar nada si no hay combos ni equipos (después de cargar)
   if (!isLoading && combos.length === 0 && teamTypes.length === 0) {
     return null;
   }
@@ -93,8 +89,11 @@ export default function CombosGrid() {
               {paquete.descripcion && <p className="insc-card__desc">{paquete.descripcion}</p>}
 
               <div className="insc-card__price">
-                <span className="insc-card__amount">${paquete.precio.toLocaleString('es-AR')}</span>
-                {paquete.gratuito && <span className="insc-card__tag">/GRATUITO</span>}
+                {esGratuito(paquete) ? (
+                  <span className="insc-card__amount">Gratis</span>
+                ) : (
+                  <span className="insc-card__amount">${paquete.precio.toLocaleString('es-AR')}</span>
+                )}
               </div>
 
               {paquete.caracteristicas.length > 0 && (
@@ -118,7 +117,11 @@ export default function CombosGrid() {
           ))}
 
           {teamTypes.length > 0 && (
-            <a href="/equipos" className="insc-card" style={{ animationDelay: `${0.15 + combos.length * 0.12}s` }}>
+            <a
+              href="/equipos"
+              className="insc-card"
+              style={{ animationDelay: `${0.15 + combos.length * 0.12}s` }}
+            >
               <h3 className="insc-card__title">Inscripción de equipos</h3>
               <p className="insc-card__desc">
                 ¿Querés competir con tu equipo? Un líder inscribe al equipo y carga a los participantes.

@@ -5,7 +5,7 @@ interface OrderSuccessProps {
 }
 
 const CVU = '0000003100030634838698';
-const ALIAS = 'Juveconfe25';
+const ALIAS = 'juve.2026';
 
 type ProofState = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -16,6 +16,10 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
   // Órdenes con comidas: la redirección agrega ?meals=1
   const [hasMeals] = useState(
     () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('meals') === '1'
+  );
+  // Órdenes de equipos: la redirección agrega ?team=1
+  const [isTeam] = useState(
+    () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('team') === '1'
   );
   const [proofState, setProofState] = useState<ProofState>('idle');
   const [proofError, setProofError] = useState<string | null>(null);
@@ -95,10 +99,12 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
               </svg>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-white mb-3">
-              ¡Orden Creada Exitosamente!
+              {isTeam ? '¡Orden de inscripción creada!' : '¡Orden Creada Exitosamente!'}
             </h1>
             <p className="text-white/70 text-lg">
-              Tu orden ha sido registrada correctamente
+              {isTeam
+                ? 'Tu equipo queda inscripto cuando acreditamos el pago'
+                : 'Tu orden ha sido registrada correctamente'}
             </p>
           </div>
 
@@ -172,7 +178,7 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
             <ul className="space-y-2 text-white/80">
               <li className="flex gap-2">
                 <span className="text-[#CCFF00] font-bold">1.</span>
-                <span>Realiza la transferencia bancaria al alias <strong>Juveconfe25</strong></span>
+                <span>Realiza la transferencia bancaria al alias <strong>{ALIAS}</strong></span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[#CCFF00] font-bold">2.</span>
@@ -180,7 +186,11 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
               </li>
               <li className="flex gap-2">
                 <span className="text-[#CCFF00] font-bold">3.</span>
-                <span>En el transcurso de 24 horas recibirás tu entrada por email</span>
+                <span>
+                  {isTeam
+                    ? 'Cuando verifiquemos el pago te enviamos por email el link para editar tu equipo'
+                    : 'En el transcurso de 24 horas recibirás tu entrada por email'}
+                </span>
               </li>
             </ul>
           </div>

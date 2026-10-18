@@ -38,6 +38,17 @@ export interface TeamPayload {
   players: TeamPlayerInput[];
 }
 
+/** Datos para inscribir un equipo CON PAGO: la API crea una orden y el equipo nace al aprobarse. */
+export interface TeamOrderPayload {
+  teamTypeId: string;
+  name: string;
+  leaderName: string;
+  leaderCuil: string;
+  leaderEmail: string;
+  leaderPhone: string;
+  players: TeamPlayerInput[];
+}
+
 const apiUrl = () => import.meta.env.PUBLIC_API_URL || 'http://localhost:3072';
 
 async function readError(res: Response, fallback: string): Promise<Error> {
@@ -66,6 +77,25 @@ export async function createTeam(teamTypeId: string, payload: TeamPayload): Prom
   });
   if (!res.ok) throw await readError(res, 'No se pudo inscribir el equipo');
   return res.json();
+}
+
+/**
+ * Inscripción con pago: crea la orden de transferencia. El equipo se crea cuando se aprueba el pago
+ * y el link de edición llega por email.
+ */
+export async function createTeamOrder(payload: TeamOrderPayload): Promise<{ orderID: string }> {
+  const res = await fetch(`${apiUrl()}/teams/public/order`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await readError(res, 'No pudimos generar la orden de pago');
+  return res.json();
+}
+
+/** Página de confirmación (misma que usan las entradas) con el aviso de que es un equipo */
+export function orderConfirmationHref(orderId: string): string {
+  return `/confirmacion?orderId=${encodeURIComponent(orderId)}&team=1`;
 }
 
 export async function fetchTeam(id: string, token: string): Promise<TeamView> {
