@@ -5,7 +5,7 @@ interface OrderSuccessProps {
 }
 
 const CVU = '0000003100030634838698';
-const ALIAS = 'juve.2026';
+const ALIAS = 'confe.juve';
 
 type ProofState = 'idle' | 'sending' | 'sent' | 'error';
 
