@@ -116,9 +116,9 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
   const pricePerPerson = selectedPackage.precio;
   const isFree = selectedPackage.gratuito || pricePerPerson === 0;
   const singleFree = isFree && (totalCombos ?? 1) <= 1;
-  const capacityOne = selectedPackage.personsIncluded === 1 && !(selectedPackage.maxPersons && selectedPackage.maxPersons > 1);
-  const personalDataOnly = isFree && capacityOne;
-  const showQuantitySelector = !personalDataOnly;
+  // Un combo gratis tambien puede inscribir a varias personas en una sola orden:
+  // el selector de cantidad vive en la seccion de invitados, siempre visible.
+  const personalDataOnly = isFree && numGuests === 1;
   const hidePlanAndResumen = singleFree;
   const totalPrice = pricePerPerson * numGuests;
   const totalPriceWithSurcharge = Math.round(totalPrice * 1.26);
@@ -474,36 +474,6 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
                       </div>
                     </div>
 
-                    {/* Selector de cantidad */}
-                    {showQuantitySelector && (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-4">
-                      <span className="text-white/80 text-sm font-medium">Cantidad de personas:</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleNumGuestsChange(numGuests - 1)}
-                          className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          value={numGuests}
-                          onChange={(e) => handleNumGuestsChange(parseInt(e.target.value) || 1)}
-                          min="1"
-                          className="w-16 h-8 bg-black/30 text-white text-center rounded-lg border border-white/20 focus:border-[#8B3FFF]/50 focus:ring-1 focus:ring-[#8B3FFF]/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleNumGuestsChange(numGuests + 1)}
-                          className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    )}
-
                     {/* Total */}
                     <div className="mt-4 pt-4 border-t border-white/20">
                       <div className="flex flex-wrap justify-between items-center gap-2">
@@ -622,7 +592,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
                   )}
 
                   {/* Invitados */}
-                  <div className="flex items-center justify-between bg-black/30 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-black/30 backdrop-blur-sm p-3 rounded-lg border border-white/20">
                     <div className="flex items-center gap-2 text-sm font-medium text-white">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#8B3FFF]">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -630,6 +600,35 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
                         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
                       </svg>
                       <span className="text-white">{personalDataOnly ? 'Datos personales' : `Invitados (${numGuests})`}</span>
+                    </div>
+
+                    {/* Selector de cantidad: va aca para funcionar tambien con combo gratis
+                        (el panel "Plan Seleccionado" se oculta cuando el evento tiene un unico combo) */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/80 text-sm font-medium">Cantidad de personas:</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleNumGuestsChange(numGuests - 1)}
+                          className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          value={numGuests}
+                          onChange={(e) => handleNumGuestsChange(parseInt(e.target.value) || 1)}
+                          min="1"
+                          className="w-16 h-8 bg-black/30 text-white text-center rounded-lg border border-white/20 focus:border-[#8B3FFF]/50 focus:ring-1 focus:ring-[#8B3FFF]/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleNumGuestsChange(numGuests + 1)}
+                          className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -825,36 +824,6 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
                             {!isFree && <span className="text-sm text-white/60 font-normal">por persona</span>}
                           </div>
                         </div>
-
-                        {/* Selector de cantidad */}
-                        {showQuantitySelector && (
-                        <div className="flex items-center gap-3 mt-4">
-                          <span className="text-white/80 text-sm font-medium">Cantidad:</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleNumGuestsChange(numGuests - 1)}
-                              className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              value={numGuests}
-                              onChange={(e) => handleNumGuestsChange(parseInt(e.target.value) || 1)}
-                              min="1"
-                              className="w-16 h-8 bg-black/30 text-white text-center rounded-lg border border-white/20 focus:border-[#8B3FFF]/50 focus:ring-1 focus:ring-[#8B3FFF]/30"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleNumGuestsChange(numGuests + 1)}
-                              className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                        )}
 
                         {/* Total */}
                         <div className="mt-4 pt-4 border-t border-white/20">
