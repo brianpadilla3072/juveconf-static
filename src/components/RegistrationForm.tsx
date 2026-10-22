@@ -41,6 +41,10 @@ const emptyGuestExtra = (): GuestExtra => ({
   guardianPhone: '',
 });
 
+// El servidor solo acepta DNI/CUIL como 7 a 11 dígitos (sin puntos, espacios ni guiones)
+const sanitizeDni = (value: string) => value.replace(/\D/g, '');
+const isValidDni = (value: string) => /^\d{7,11}$/.test(sanitizeDni(value));
+
 const emptyGuest = (): GuestData => ({
   name: '',
   dni: '',
@@ -201,9 +205,15 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
   const validateBase = (): boolean => {
     // Validar formulario
     // Con combo gratuito el comprador es el invitado 1, que se valida abajo
-    if (!buyerIsFirstGuest && (!formData.email || !formData.phone || !formData.dni)) {
-      alert('Por favor completa todos los campos del comprador');
-      return false;
+    if (!buyerIsFirstGuest) {
+      if (!formData.email || !formData.phone || !formData.dni) {
+        alert('Por favor completa todos los campos del comprador');
+        return false;
+      }
+      if (!isValidDni(formData.dni)) {
+        alert('El DNI del comprador debe tener entre 7 y 11 números, sin puntos ni espacios');
+        return false;
+      }
     }
 
     // Validar invitados
@@ -211,6 +221,10 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
       const guest = guestData[i];
       if (!guest.name || !guest.dni || !guest.birthdate || !guest.phone || !guest.email || !guest.city || !guest.church) {
         alert(`Por favor completa todos los campos del invitado ${i + 1}`);
+        return false;
+      }
+      if (!isValidDni(guest.dni)) {
+        alert(`El DNI del invitado ${i + 1} debe tener entre 7 y 11 números, sin puntos ni espacios`);
         return false;
       }
 
@@ -267,7 +281,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
       // Formatear attendees para el backend
       const attendees = guestData.map(guest => ({
         name: guest.name,
-        cuil: guest.dni,
+        cuil: sanitizeDni(guest.dni),
         metadata: JSON.stringify({
           email: guest.email,
           phone: guest.phone,
@@ -290,7 +304,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
         id: selectedPackage.id,                    // ID del combo
         email: buyer.email,
         phone: buyer.phone,
-        cuil: buyer.dni,
+        cuil: sanitizeDni(buyer.dni),
         title: selectedPackage.titulo,             // Título del combo
         unit_price: pricePerPerson,                // Precio unitario
         quantity: numGuests,                       // Cantidad de personas
@@ -673,6 +687,7 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
                               placeholder="Ej: 12345678"
                               required
                             />
+                            <p className="text-xs text-white/50">Sin puntos ni espacios</p>
                           </div>
 
                           <div className="grid gap-2">
