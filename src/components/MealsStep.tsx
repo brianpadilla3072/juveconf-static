@@ -33,9 +33,22 @@ interface MealsStepProps {
   onChange: (guestIndex: number, meals: MealPick[]) => void;
   onBack: () => void;
   onContinue: () => void;
+  /** Si no hay nada que pagar (entrada e invitados gratis), "onContinue" ya envía el pedido: no hay paso de resumen. */
+  submitDirectly?: boolean;
+  submitting?: boolean;
+  error?: string | null;
 }
 
-export default function MealsStep({ config, guests, onChange, onBack, onContinue }: MealsStepProps) {
+export default function MealsStep({
+  config,
+  guests,
+  onChange,
+  onBack,
+  onContinue,
+  submitDirectly = false,
+  submitting = false,
+  error = null,
+}: MealsStepProps) {
   const tiers = Object.entries(config.discountTiers)
     .map(([count, percent]) => ({ count: Number(count), percent }))
     .filter((t) => t.percent > 0)
@@ -120,15 +133,21 @@ export default function MealsStep({ config, guests, onChange, onBack, onContinue
           <span className="text-white/90">Total comidas (todos los invitados)</span>
           <span>{formatPrice(mealsTotal)}</span>
         </div>
+
+        {submitDirectly && error && (
+          <div role="alert" className="bg-red-500/20 border border-red-500/40 rounded-lg p-4 text-sm text-white whitespace-pre-line">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center p-6 pt-0 mt-6">
         <div className="flex flex-col-reverse md:flex-row gap-4 w-full">
-          <button type="button" onClick={onBack} className={secondaryButtonClass}>
+          <button type="button" onClick={onBack} disabled={submitting} className={secondaryButtonClass}>
             Volver a los datos
           </button>
-          <button type="button" onClick={onContinue} className={primaryButtonClass}>
-            Continuar al resumen
+          <button type="button" onClick={onContinue} disabled={submitting} className={primaryButtonClass}>
+            {submitting ? 'Enviando...' : submitDirectly ? 'Confirmar inscripción' : 'Continuar al resumen'}
           </button>
         </div>
       </div>

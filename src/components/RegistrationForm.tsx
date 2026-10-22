@@ -133,6 +133,12 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
     ? { email: guestData[0]?.email ?? '', phone: guestData[0]?.phone ?? '', dni: guestData[0]?.dni ?? '' }
     : formData;
 
+  // Con comidas: total real de comidas elegidas (una vez cargada la librería). Si la entrada y las
+  // comidas dan $0, no hay nada que revisar ni pagar: se saltea el paso de "Resumen" y se envía directo.
+  const liveMealsTotal =
+    meals && mealsLib ? guestData.reduce((acc, g) => acc + mealsLib.quoteMeals(g.meals, meals).total, 0) : 0;
+  const orderIsFullyFree = isFree && liveMealsTotal === 0;
+
   // Un combo gratis no muestra $0 sino "Gratis"
   const priceLabel = isFree ? 'Gratis' : `$${pricePerPerson.toLocaleString('es-AR')}`;
   const totalLabel = isFree ? 'Gratis' : `$${totalPrice.toLocaleString('es-AR')}`;
@@ -437,7 +443,10 @@ export default function RegistrationForm({ selectedPackage, meals = null, totalC
                   guests={guestData}
                   onChange={handleGuestMealsChange}
                   onBack={() => goToStep('form')}
-                  onContinue={() => goToStep('summary')}
+                  onContinue={() => (orderIsFullyFree ? handleSubmit('cash') : goToStep('summary'))}
+                  submitDirectly={orderIsFullyFree}
+                  submitting={submitting}
+                  error={submitError}
                 />
               ) : (
                 <MealsSummary
